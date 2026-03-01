@@ -2,14 +2,213 @@
 
 \usepackage{amsmath}
 \usepackage{amsthm}
+\usepackage{amssymb}
 \usepackage{mathpartir}
 
-\title{Title goes here}
+\title{Polymorphic bottom-up weighted relational programming}
 \author{Dmitri Volkov}
+
+\newcommand{\wt}{\mathrel{\text{wt}}}
+\newcommand{\vt}{\mathrel{\text{vt}}}
 
 \begin{document}
 
 \maketitle
 
+\chapter{Polymorphic semiringKanren}
+
+\section{Typing rules}
+
+We expand the syntax and typing of minimal semiringKanren to support polymorphic relations.
+
+\begin{figure}
+\[
+\begin{array}{lrcl}
+	\text{Programs} & P & ::= & \mathit{Rel}\dots \\
+	\text{Relations} & Rel & ::= & \texttt{(defrel (\(R\) \(\forall \alpha \dots\) . (\(x:\tau\)) \(\dots\)) \(g\)) } \\
+	\text{Goals} & g & ::= & \texttt{(conj \(g\) \(g\))} \\
+	& & | & \texttt{(disj \(g\) \(g\))} \\
+	& & | & \texttt{(fresh ((\(x:\tau\)) \(\dots\)) \(g\))} \\
+	& & | & \texttt{(== \(v\) \(v\))} \\
+	& & | & \texttt{(=/= \(v\) \(v\))} \\
+	& & | & \texttt{(\(R\) \(v\) \(\dots\))} \\
+	& & | & \texttt{(factor \(k\))} \\
+	\text{Values} & v & ::= & \texttt{sole} \\
+	& & | & \texttt{(left\(_{\tau_1, \tau_2}\) \(v\))} \\
+	& & | & \texttt{(right\(_{\tau_1, \tau_2}\) \(v\))} \\
+	& & | & \texttt{(pair \(v\) \(v\))} \\
+	& & | & x \\
+	\text{Types} & \tau & ::= & \texttt{Unit} \\
+	& & | & \texttt{(Sum \(\tau\) \(\tau\))} \\
+	& & | & \texttt{(Pair \(\tau\) \(\tau\))} \\
+	& & | & \alpha \\
+	\text{Relation names} & R & & \\
+	\text{Variables} & x,y,z & & \\
+	\text{Type variables} & \alpha,\beta,\gamma & & \\
+	\text{Weights} & r & \in & \mathbb{K}
+\end{array}
+\]
+\end{figure}
+
+Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
+The \(\Delta \vdash v:\tau\) is the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
+The \(\Gamma;\Delta \vdash g \wt\) judgement denotes that the goal \(g\) is well-typed under the \(\Gamma\) and \(\Delta\) contexts.
+The \(\Gamma \vdash R \wt\) judgement denotes that the relation \(R\) is well-typed under the \(\Gamma\) context, and the \(P \wt\) judgement denotes that the entire program is well-typed.
+The \(\Delta \vdash \tau \vt\) judgement denotes that the type \(\tau\) is valid under the \(\Delta\) context.
+The judgements within the \(\Gamma\) context are extended to support type variables: \((R : \forall \alpha_1, \dots, \alpha_m . \tau_1,\dots,\tau_n \rightarrow)\).
+As before, \(\Delta\) holds value typing judgements (of the form \(x:\tau\)). 
+\(Delta\) is also extended to hold judgements of the form \(\alpha : *\), indicating that the type variable \(\alpha\) can be treated as a valid type in the current context.
+In both cases, note that type variables may now appear in \(\tau\).
+
+Note that our relation typing judgement is "the relation is well-typed under a context" rather than "the relation has type \(\dots\)".
+Relations are required to specify all needed typing information, so it only is necessary to check that their bodies are compatible.
+Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
+Also note that in the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
+
+\begin{figure}
+\begin{mathpar}
+	\infer{ }{\Delta \vdash \texttt{Unit} \vt}
+	\and
+	\infer{
+		\Delta \vdash \tau_1 \vt \and \Delta \vdash \tau_2 \vt
+	}{
+		\Delta \vdash \texttt{(Sum \(\tau_1\) \(\tau_2\))} \vt
+	}
+	\and
+	\infer{
+		\Delta \vdash \tau_1 \vt \and \Delta \vdash \tau_2 \vt
+	}{
+		\Delta \vdash \texttt{(Prod \(\tau_1\) \(\tau_2\))} \vt
+	}
+	\and
+	\infer{ }{\Delta,\alpha : * \vdash \alpha \vt}
+\end{mathpar}
+\caption{Inference rules for eype validity judgement.}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+	\infer{ }{
+		\Delta \vdash \texttt{sole} : \texttt{Unit}
+	}
+	\and
+	\infer{
+		\Delta \vdash v : \tau_1
+	}
+	{
+		\Delta \vdash \texttt{(left\(_{\tau_1, \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
+	}
+	\and
+	\infer{
+		\Delta \vdash v : \tau_2
+	}
+	{
+		\Delta \vdash \texttt{(right\(_{\tau_1, \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
+	}
+	\and
+	\infer{
+		\Delta \vdash v_1 : \tau_1
+		\and
+		\Delta \vdash v_2 : \tau_2
+	}
+	{
+		\Delta \vdash \texttt{(pair \(v_1\) \(v_2\))} : \texttt{(Prod \(\tau_1\) \(\tau_2\))}
+	}
+	\and
+	\infer{
+		\Delta, x : \tau \vdash \tau \vt
+	}
+	{
+		\Delta, x : \tau \vdash x : \tau
+	}
+\end{mathpar}
+\caption{Inference rules for value typing judgement.}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+	\infer{
+		\Gamma;\Delta \vdash g_1 \wt
+		\and
+		\Gamma;\Delta \vdash g_2 \wt
+	}{
+		\Gamma;\Delta \vdash \texttt{(conj \(g_1\) \(g_2\))} \wt
+	}
+	\and
+	\infer{
+		\Gamma;\Delta \vdash g_1 \wt
+		\and
+		\Gamma;\Delta \vdash g_2 \wt
+	}{
+		\Gamma;\Delta \vdash \texttt{(disj \(g_1\) \(g_2\))} \wt
+	}
+	\and
+	\infer{
+		\Delta \vdash \tau \vt
+		\and
+		\Gamma;\Delta,x:\tau \vdash g \wt
+	}{
+		\Gamma;\Delta \vdash \texttt{(fresh ((\(x:\tau\))) \(g\))} \wt
+	}
+	\and
+	\infer{
+		\Delta \vdash v_1 : \tau
+		\and
+		\Delta \vdash v_2 : \tau
+	}{
+		\Gamma; \Delta \vdash \texttt{(== \(v_1\) \(v_2\))} \wt
+	}
+	\and
+	\infer{
+		\Delta \vdash v_1 : \tau
+		\and
+		\Delta \vdash v_2 : \tau
+	}{
+		\Gamma; \Delta \vdash \texttt{(=/= \(v_1\) \(v_2\))} \wt
+	}
+	\and
+	\infer{
+	}{
+		\Gamma, (R : \tau_1, \dots, \tau_n \rightarrow); \Delta, v_1 : \sigma(\tau_1), \dots, v_n : \sigma(\tau_n) \vdash \texttt{(\(R\) \(v_1\) \(\dots\) \(v_n\))} \wt
+	}
+	\and
+	\infer{ }{
+		\Gamma; \Delta \vdash \texttt{(factor \(r\))} \wt
+	}
+\end{mathpar}
+\caption{Inference rules for goal typing judgement.}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+	\infer{
+		\Gamma ; \alpha_1:*, \dots, \alpha_m:*, x_1:\tau_1, \dots, x_n : \tau_n \vdash g \wt
+	}{
+		\Gamma \vdash \texttt{(defrel (\(R\) \(\forall \alpha_1, \dots, \alpha_m\) . (\(x_1 : \tau_1\)) \(\dots\) (\(x_n : \tau_n\))) \(g\)))} \wt
+	}
+	\and
+	\infer{
+		(R_1 : \forall \alpha_1, \dots, \alpha_m . \tau_1, \dots \tau_n),
+		\dots,
+		(R_N : \forall \gamma_1, \dots, \gamma_q . \rho_1, \dots, \rho_p)
+		\vdash \\\\
+		\texttt{(defrel (\(R_1\) \(\forall \alpha_1, \dots, \alpha_m\) . (\(x_1 : \tau_1\)) \(\dots\) (\(x_n : \tau_n\))) \(g_1\)))} \wt
+		\\\\
+		\and
+		\vdots
+		\and
+		\\\\
+		(R_1 : \forall \alpha_1, \dots, \alpha_m . \tau_1, \dots \tau_n),
+		\dots,
+		(R_N : \forall \gamma_1, \dots, \gamma_q . \rho_1, \dots, \rho_p)
+		\vdash \\\\
+		\texttt{(defrel (\(R_N\) \(\forall \gamma_1, \dots, \gamma_q\) . (\(z_1 : \rho_1\)) \(\dots\) (\(z_p : \rho_p\))) \(g_N\)))} \wt
+	}{
+		\texttt{(defrel (\(R_1\) \(\forall \alpha_1, \dots, \alpha_m\) . (\(x_1 : \tau_1\)) \(\dots\) (\(x_n : \tau_n\))) \(g_1\)))}, \dots, \\\\
+		\texttt{(defrel (\(R_N\) \(\forall \gamma_1, \dots, \gamma_q\) . (\(z_1 : \rho_1\)) \(\dots\) (\(z_p : \rho_p\))) \(g_N\)))} \wt \\\\
+	}
+\end{mathpar}
+\caption{Inference rules for relation and program typing judgements.}
+\end{figure}
 
 \end{document}

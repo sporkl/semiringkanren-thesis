@@ -3,6 +3,7 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
+\usepackage{stmaryrd}
 \usepackage{mathpartir}
 
 \title{Polymorphic bottom-up weighted relational programming}
@@ -64,6 +65,7 @@ Note that our relation typing judgement is "the relation is well-typed under a c
 Relations are required to specify all needed typing information, so it only is necessary to check that their bodies are compatible.
 Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
 Also note that in the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
+Finally, note the use of a type variable substitution, \(\sigma\), when checking the type validity of relation calls.
 
 \begin{figure}
 \begin{mathpar}
@@ -210,5 +212,77 @@ Also note that in the formal semantics type variables are explicitly specified, 
 \end{mathpar}
 \caption{Inference rules for relation and program typing judgements.}
 \end{figure}
+
+\section{"Infinite" semantics}
+
+Here we update the denotational semantics to handle type variables.
+Observe that when comparing values of an unknown type, we only need to know the size of the types.
+Intuitively, the only comparison operations we have are equality and disequality, which result in diagonal or off-diagonal ndarrays depending only on size.
+This generalizes to values which may only partially consist of an unknown type.
+As such, for each relation \(R\) with type variables \(\alpha, \dots, \gamma\), we generate concrete instances corresponding to all possible type variable size assignments: \(R_{\alpha=1,\dots,\gamma=1}, \dots, R_{\alpha=n,\dots,\gamma=m}\).
+A type of size \(n\) can easily be constructed as a sum of \(n\) \texttt{Unit}s.
+
+As before, \(\eta\) is a relation environment and matches the relation type context.
+\(\eta\) is a map from relation names to multidimensional arrays.
+Similarly, \(\delta\) is the variable environment and matches the variable type context (excluding type variables).
+\(\delta\) is a map from variable names to values.
+As before, the denotation for types is a set of specific values.
+Because types variables are reified in each relation (monomorphisation), no extra machinery is necessary.
+The denotation for values is expressed as a specific primitive value constructed from \texttt{sole}, \texttt{(left \(v\))}, \texttt{(right \(v\))}, and \texttt{(pair \(v_1\) \(v_2\))}, under a variable context.
+The denotation for goals is expressed as a weight for each individual assignment of values to variables, but should be considered as a multidimensional array across all possible assignments.
+
+\begin{figure}
+\begin{align*}
+	\llbracket \texttt{Unit} \rrbracket &= \{\texttt{sole}\} \\
+	\llbracket \texttt{(Sum \(\tau_1\) \(\tau_2\))} \rrbracket &= \{\texttt{(left \(v\))} \mid v \in \llbracket \tau_1 \rrbracket\} \cup \{\texttt{(right \(v\))} \mid v \in \llbracket \tau_2 \rrbracket\} \\
+	\llbracket \texttt{(Prod \(\tau_1\) \(\tau_2\))} \rrbracket &= \{\texttt{(pair \(v_1\) \(v_2\))} \mid v_1 \in \llbracket \tau_1 \rrbracket, v_2 \in \llbracket \tau_2 \rrbracket\}
+\end{align*}
+\caption{Denotational semantics for types.}
+\end{figure}
+
+\begin{figure}
+\begin{align*}
+	\llbracket \texttt{sole} \rrbracket (\delta) &= \texttt{sole} \\
+	\llbracket \texttt{(left \(v\))} \rrbracket (\delta) &= \texttt{(left \(\llbracket v \rrbracket (\delta) \))} \\
+	\llbracket \texttt{(right \(v\))} \rrbracket (\delta) &= \texttt{(right \(\llbracket v \rrbracket (\delta) \))} \\
+	\llbracket \texttt{(pair \(v_1\) \(v_2\))} \rrbracket (\delta) &= \texttt{(pair \(\llbracket v_1 \rrbracket (\delta) \) \(\llbracket v_2 \rrbracket (\delta)\))} \\
+	\llbracket x \rrbracket (\delta) &= \delta(x)
+\end{align*}
+\caption{Denotational semantics for values.}
+\end{figure}
+
+\begin{figure}
+\begin{align*}
+	\llbracket \texttt{(conj \(g_1\) \(g_2\))} \rrbracket (\eta;\delta) &= \llbracket g_1 \rrbracket (\eta;\delta) \times \llbracket g_2 \rrbracket (\eta;\delta) \\
+	\llbracket \texttt{(disj \(g_1\) \(g_2\))} \rrbracket (\eta;\delta) &= \llbracket g_1 \rrbracket (\eta;\delta) + \llbracket g_2 \rrbracket (\eta;\delta) \\
+	\llbracket \texttt{(fresh ((\(x : \tau\))) \(g\))} \rrbracket (\eta;\delta) &= \sum_{v \in \llbracket \tau \rrbracket} \llbracket g \rrbracket (\eta; \delta\{x \mapsto v\}) \\
+	\llbracket \texttt{(== \(v_1\) \(v_2\))} \rrbracket (\eta; \delta) &=
+	\begin{cases}
+		1 & \text{if } \llbracket v_1 \rrbracket (\delta) = \llbracket v_2 \rrbracket (\delta) \\
+		0 & \text{if } \llbracket v_1 \rrbracket (\delta) \ne \llbracket v_2 \rrbracket (\delta)
+	\end{cases} \\
+	\llbracket \texttt{(=/= \(v_1\) \(v_2\))} \rrbracket (\eta; \delta) &=
+	\begin{cases}
+		1 & \text{if } \llbracket v_1 \rrbracket (\delta) \ne \llbracket v_2 \rrbracket (\delta) \\
+		0 & \text{if } \llbracket v_1 \rrbracket (\delta) = \llbracket v_2 \rrbracket (\delta)
+	\end{cases} \\
+	\llbracket \texttt{(\(R\) \(v_1\) \(\dots\) \(v_n\))} \rrbracket (\eta; \delta) &= \eta(R_{\alpha_1=|\sigma(\alpha_1)|,\dots,\alpha_m=|\sigma(s_m)|})(\delta(v_1), \dots, \delta(v_n))
+	\text{ where } v_i : \sigma(\tau_i) \\
+	\llbracket \texttt{(factor \(r\))} \rrbracket (\eta; \delta) &= r
+\end{align*}
+\caption{Denotational semantics for goals.}
+\end{figure}
+
+\begin{figure}
+\begin{gather*}
+	\llbracket \texttt{(defrel (\(R_{\alpha_1=|\sigma(\alpha_1)|, \dots, \alpha_m = |\sigma(\alpha_m)|}\) \(\forall \alpha_1, \dots, \alpha_m\) .
+	(\(x_1 : \sigma(\tau_1)\)) \(\dots\) (\(x_n : \sigma(\tau_n)\))) \(g\))} \rrbracket (\eta) = \\
+	(i_1, \dots, i_n) \mapsto \llbracket g \rrbracket (\eta; \{x_1 \mapsto \llbracket i_1 \rrbracket(\cdot), \dots, x_n \mapsto \llbracket i_n \rrbracket(\cdot)\} \\
+	\llbracket \textit{Rel}_1, \dots, \textit{Rel}_Q \rrbracket =
+	\mu \delta . \{R_1 \mapsto \llbracket \textit{Rel}_1 \rrbracket (\delta), \dots, R_Q \mapsto \llbracket \textit{Rel}_Q \rrbracket (\delta) \}
+\end{gather*}
+\caption{Denotational semantics for relations and programs.}
+\end{figure}
+
 
 \end{document}

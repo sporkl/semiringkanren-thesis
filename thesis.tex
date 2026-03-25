@@ -9,8 +9,20 @@
 \title{Polymorphic bottom-up weighted relational programming}
 \author{Dmitri Volkov}
 
-\newcommand{\wt}{\mathrel{\text{wt}}}
-\newcommand{\vt}{\mathrel{\text{vt}}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\newcommand{\wt}{\mathrel{\textrm{wt}}}
+\newcommand{\vt}{\mathrel{\textrm{vt}}}
+
+\newcommand{\shell}{\mathrel{\textrm{shell}}}
+\newcommand{\holes}{\mathrel{\textrm{holes}}}
+\newcommand{\envshell}{\mathrel{\textrm{envshell}}}
+\newcommand{\envholes}{\mathrel{\textrm{envholes}}}
+\newcommand{\eqpat}{\leftrightharpoons}
 
 \begin{document}
 
@@ -66,6 +78,8 @@ Relations are required to specify all needed typing information, so it only is n
 Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
 Also note that in the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
 Finally, note the use of a type variable substitution, \(\sigma\), when checking the type validity of relation calls.
+
+We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \; \dots \; (x_n : \tau_n)\), or similar.
 
 \begin{figure}
 \begin{mathpar}
@@ -171,7 +185,7 @@ Finally, note the use of a type variable substitution, \(\sigma\), when checking
 	\and
 	\infer{
 	}{
-		\Gamma, (R : \tau_1, \dots, \tau_n \rightarrow); \Delta, v_1 : \sigma(\tau_1), \dots, v_n : \sigma(\tau_n) \vdash \texttt{(\(R\) \(v_1\) \(\dots\) \(v_n\))} \wt
+		\Gamma, (R : \vec\tau \rightarrow); \Delta, \vec v : \sigma(\vec \tau) \vdash \texttt{(\(R\) \(\vec v\))} \wt
 	}
 	\and
 	\infer{ }{
@@ -184,36 +198,28 @@ Finally, note the use of a type variable substitution, \(\sigma\), when checking
 \begin{figure}
 \begin{mathpar}
 	\infer{
-		\Gamma ; \alpha_1:*, \dots, \alpha_m:*, x_1:\tau_1, \dots, x_n : \tau_n \vdash g \wt
+		\Gamma ; \vec \alpha:*, \vec x:\vec \tau \vdash g \wt
 	}{
-		\Gamma \vdash \texttt{(defrel (\(R\) \(\forall \alpha_1, \dots, \alpha_m\) . (\(x_1 : \tau_1\)) \(\dots\) (\(x_n : \tau_n\))) \(g\)))} \wt
+		\Gamma \vdash \texttt{(defrel (\(R\) \(\forall \vec \alpha\) . (\(\vec x : \vec \tau\))) \(g\)))} \wt
 	}
 	\and
 	\infer{
-		(R_1 : \forall \alpha_1, \dots, \alpha_m . \tau_1, \dots \tau_n),
-		\dots,
-		(R_N : \forall \gamma_1, \dots, \gamma_q . \rho_1, \dots, \rho_p)
-		\vdash \\\\
-		\texttt{(defrel (\(R_1\) \(\forall \alpha_1, \dots, \alpha_m\) . (\(x_1 : \tau_1\)) \(\dots\) (\(x_n : \tau_n\))) \(g_1\)))} \wt
+		(R_1 : \forall \vec \alpha_1 . \vec \tau_1 \rightarrow), \dots, (R_N : \forall \vec \alpha_N . \vec \tau_N \rightarrow) \vdash
+		\texttt{(defrel (\(R_1\) \(\forall \vec \alpha_1\) . (\(\vec x_1 : \vec \tau_1\))) \(g_1\))} \wt
 		\\\\
-		\and
 		\vdots
-		\and
 		\\\\
-		(R_1 : \forall \alpha_1, \dots, \alpha_m . \tau_1, \dots \tau_n),
-		\dots,
-		(R_N : \forall \gamma_1, \dots, \gamma_q . \rho_1, \dots, \rho_p)
-		\vdash \\\\
-		\texttt{(defrel (\(R_N\) \(\forall \gamma_1, \dots, \gamma_q\) . (\(z_1 : \rho_1\)) \(\dots\) (\(z_p : \rho_p\))) \(g_N\)))} \wt
+		(R_1 : \forall \vec \alpha_1 . \vec \tau_1 \rightarrow), \dots, (R_N : \forall \vec \alpha_N . \vec \tau_N \rightarrow) \vdash
+		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\) . (\(\vec x_N : \vec \tau_N\))) \(g_1\))} \wt
 	}{
-		\texttt{(defrel (\(R_1\) \(\forall \alpha_1, \dots, \alpha_m\) . (\(x_1 : \tau_1\)) \(\dots\) (\(x_n : \tau_n\))) \(g_1\)))}, \dots, \\\\
-		\texttt{(defrel (\(R_N\) \(\forall \gamma_1, \dots, \gamma_q\) . (\(z_1 : \rho_1\)) \(\dots\) (\(z_p : \rho_p\))) \(g_N\)))} \wt \\\\
+		\texttt{(defrel (\(R_1\) \(\forall \vec \alpha_1\) . (\(\vec x_1:\vec \tau_1\))) \(g_1\)))}, \dots, \\\\
+		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\) . (\(\vec x_N:\vec \tau_N\))) \(g_N\)))} \wt
 	}
 \end{mathpar}
 \caption{Inference rules for relation and program typing judgements.}
 \end{figure}
 
-\section{"Infinite" semantics}
+\section{Monomorphizing semantics}
 
 Here we update the denotational semantics to handle type variables.
 Observe that when comparing values of an unknown type, we only need to know the size of the types.
@@ -230,6 +236,7 @@ As before, the denotation for types is a set of specific values.
 Because types variables are reified in each relation (monomorphisation), no extra machinery is necessary.
 The denotation for values is expressed as a specific primitive value constructed from \texttt{sole}, \texttt{(left \(v\))}, \texttt{(right \(v\))}, and \texttt{(pair \(v_1\) \(v_2\))}, under a variable context.
 The denotation for goals is expressed as a weight for each individual assignment of values to variables, but should be considered as a multidimensional array across all possible assignments.
+We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing.
 
 \begin{figure}
 \begin{align*}
@@ -266,8 +273,8 @@ The denotation for goals is expressed as a weight for each individual assignment
 		1 & \text{if } \llbracket v_1 \rrbracket (\delta) \ne \llbracket v_2 \rrbracket (\delta) \\
 		0 & \text{if } \llbracket v_1 \rrbracket (\delta) = \llbracket v_2 \rrbracket (\delta)
 	\end{cases} \\
-	\llbracket \texttt{(\(R\) \(v_1\) \(\dots\) \(v_n\))} \rrbracket (\eta; \delta) &= \eta(R_{\alpha_1=|\sigma(\alpha_1)|,\dots,\alpha_m=|\sigma(s_m)|})(\delta(v_1), \dots, \delta(v_n))
-	\text{ where } v_i : \sigma(\tau_i) \\
+	\llbracket \texttt{(\(R\) \(\vec v\))} \rrbracket (\eta; \delta) &= \eta(R_{\vec\alpha = |\sigma(\vec\alpha)|})(\llbracket \vec v \rrbracket(\delta))
+	\text{ where } \vec v : \sigma(\vec\tau) \\
 	\llbracket \texttt{(factor \(r\))} \rrbracket (\eta; \delta) &= r
 \end{align*}
 \caption{Denotational semantics for goals.}
@@ -275,14 +282,78 @@ The denotation for goals is expressed as a weight for each individual assignment
 
 \begin{figure}
 \begin{gather*}
-	\llbracket \texttt{(defrel (\(R_{\alpha_1=|\sigma(\alpha_1)|, \dots, \alpha_m = |\sigma(\alpha_m)|}\) \(\forall \alpha_1, \dots, \alpha_m\) .
-	(\(x_1 : \sigma(\tau_1)\)) \(\dots\) (\(x_n : \sigma(\tau_n)\))) \(g\))} \rrbracket (\eta) = \\
-	(i_1, \dots, i_n) \mapsto \llbracket g \rrbracket (\eta; \{x_1 \mapsto \llbracket i_1 \rrbracket(\cdot), \dots, x_n \mapsto \llbracket i_n \rrbracket(\cdot)\} \\
-	\llbracket \textit{Rel}_1, \dots, \textit{Rel}_Q \rrbracket =
-	\mu \delta . \{R_1 \mapsto \llbracket \textit{Rel}_1 \rrbracket (\delta), \dots, R_Q \mapsto \llbracket \textit{Rel}_Q \rrbracket (\delta) \}
+	\llbracket \texttt{(defrel (\(R_{\vec \alpha = |\sigma(\vec \alpha)|}\) \(\forall \vec \alpha\) . (\(\vec x : \sigma (\vec \tau)\)) g)} \rrbracket (\eta) =
+	(\vec i) \mapsto \llbracket g \rrbracket (\eta; \{\vec x \mapsto \llbracket \vec i \rrbracket(\cdot) \} \\
+	\llbracket \textit{Rel}_1, \dots, \textit{Rel}_Q \rrbracket = \;
+	\mathrel{\text{fix}} \eta \mathrel{\text{in}} \{R_1 \mapsto \llbracket \textit{Rel}_1 \rrbracket (\eta), \dots, R_Q \mapsto \llbracket \textit{Rel}_Q \rrbracket (\eta) \}
 \end{gather*}
 \caption{Denotational semantics for relations and programs.}
 \end{figure}
 
+\section{Non-monomorphizing semantics}
+
+\section{Non-monomorphizing semantics correctness}
+
+\begin{definition}
+	We define a \emph{shell} using the following grammar:
+	\[ \begin{array}{lrcl}
+		\text{Shells} & s & ::= & \texttt{sole} \\
+		& & | & \texttt{(left \(s\))} \\
+		& & | & \texttt{(right \(s\))} \\
+		& & | & \texttt{(pair \(s_1\) \(s_2\))} \\
+		& & | & \texttt{(hole \(\alpha\))} \\
+	\end{array} \]
+\end{definition}
+
+Shells are very similar to values, but holes must be a single, non-composite type variable.
+
+Given a \emph{concrete value} with a corresponding type (including type variables), we can separate it into a shell and an ordered list of holes (corresponding to a single type variable) as follows:
+
+\begin{align*}
+	\shell_\texttt{Unit}(\texttt{sole}) &= \texttt{sole} \\
+	\shell_\texttt{(Sum \(\tau_1\) \(\tau_2\))}(\texttt{(left \(v\))}) &= \texttt{(left \(\shell_{\tau_1}(v)\))} \\
+	\shell_\texttt{(Sum \(\tau_1\) \(\tau_2\))}(\texttt{(right \(v\))}) &= \texttt{(right \(\shell_{\tau_2}(v)\))} \\
+	\shell_\texttt{(Prod \(\tau_1\) \(\tau_2\))}(\texttt{(pair \(v_1\) \(v_2\))}) &= \texttt{(pair \(\shell_{\tau_1}(v_1)\) \(\shell_{\tau_2}(v_2)\))} \\
+	\shell_\alpha(v) &= \texttt{(hole \(\alpha\))}
+\end{align*}
+
+We use \(\holes_{\alpha \in \tau}(v)\) to denote the values of the holes corresponding to type variable \(\alpha\) within type \(\tau\).
+
+\begin{align*}
+	\holes_{\alpha \in \tau}(\texttt{sole}) &= \emptyset \\
+	\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(\texttt{(left \(v\))}) &= \holes_{\alpha \in \tau_1}(v) \\
+	\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(\texttt{(right \(v\))}) &= \holes_{\alpha \in \tau_2}(v) \\
+	\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(\texttt{(pair \(v_1\) \(v_2\))}) &= \holes_{\alpha \in \tau_1}(v_1), \holes_{\alpha \in \tau_2}(v_2) \\
+	\holes_{\alpha \in \alpha}(v) &= v
+\end{align*}
+
+We also have versions of these functions which apply to \emph{value environments} (notated as \(\delta\) in the semantics) with corresponding type environments.
+
+\begin{align*}
+	\envshell() &= \emptyset \\
+	\envshell_{\tau, \vec\tau}(x,\vec x \mapsto v, \vec v) &= x,\vec x \mapsto \shell_{\tau}(v), \envshell_{\vec\tau}(\vec v)
+\end{align*}
+
+\begin{align*}
+	\envholes_{\alpha \in}() &= \emptyset \\
+	\envholes_{\alpha \in \tau,\vec \tau}(x, \vec x \mapsto v, \vec v) &= \holes_{\alpha \in \tau}(v),\envholes_{\alpha \in \vec\tau}(\vec v)
+\end{align*}
+
+Note that extracted holes are not labeled; we can find the corresponding \texttt{(hole \(...\))} in the shell by an in-order search through the shell.
+
+\begin{definition}
+	We define \(\delta_1 \eqpat_{\alpha} \delta_2\) when value environments \(\delta_1\) and \(\delta_2\) have the same \emph{equality pattern} for type variable \(\alpha\):
+	\begin{itemize}
+		\item \(\delta_1\) and \(\delta_2\) both have type environment \(\vec\tau\), and
+		\item \(\envshell_{\vec\tau}(\delta_1) = \envshell_{\vec\tau}(\delta_2)\), and
+		\item for all indices \(i, j\),
+			holes \(h_1, k_1\) at those indices in \(\envholes_{\alpha \in \vec\tau}(\delta_1)\),
+			and holes \(h_2, k_2\) at those indices in \(\envholes_{\alpha \in \vec\tau}(\delta_2)\),
+			then \(h_1 = k_1\) iff \(h_2 = k_2\), and \(h_1 \ne k_1\) iff \(h_2 \ne k_2\).
+	\end{itemize}
+\end{definition}
+
+Note that because the envshells for each value environment are equal, both environments must have the same number of holes in the same locations; the third condition relies on the second condition.
 
 \end{document}
+

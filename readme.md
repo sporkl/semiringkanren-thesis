@@ -9,9 +9,10 @@ outline:
     - sat solver
     - quantum? at least plug into Grover's algorithm?
 - polymorphic semiringKanren
-    - "infinite" semantics
-    - with idempotent semirings (x + y = x or y)
-    - with polynomials over semifields/division semiring?
+    - type system
+    - monomorphizing semantics
+    - non-monomorphizing semantics with idempotent semirings (x + y = x or y)
+    - non-monomorphizing semantics with polynomials over rings?
 - simple optimizations?
 - applications/benchmarks?
 - conclusion

@@ -22,7 +22,9 @@
 \newcommand{\holes}{\mathrel{\textrm{holes}}}
 \newcommand{\envshell}{\mathrel{\textrm{envshell}}}
 \newcommand{\envholes}{\mathrel{\textrm{envholes}}}
+
 \newcommand{\eqpat}{\leftrightharpoons}
+\newcommand{\eqpata}{\eqpat_{\alpha}}
 
 \begin{document}
 
@@ -342,18 +344,48 @@ We also have versions of these functions which apply to \emph{value environments
 Note that extracted holes are not labeled; we can find the corresponding \texttt{(hole \(...\))} in the shell by an in-order search through the shell.
 
 \begin{definition}
-	We define \(\delta_1 \eqpat_{\alpha} \delta_2\) when value environments \(\delta_1\) and \(\delta_2\) have the same \emph{equality pattern} for type variable \(\alpha\):
+	We define \(\delta_1 \eqpata \delta_2\) when value environments \(\delta_1\) and \(\delta_2\) have the same \emph{equality pattern} for type variable \(\alpha\):
 	\begin{itemize}
 		\item \(\delta_1\) and \(\delta_2\) both have type environment \(\vec\tau\), and
 		\item \(\envshell_{\vec\tau}(\delta_1) = \envshell_{\vec\tau}(\delta_2)\), and
 		\item for all indices \(i, j\),
 			holes \(h_1, k_1\) at those indices in \(\envholes_{\alpha \in \vec\tau}(\delta_1)\),
 			and holes \(h_2, k_2\) at those indices in \(\envholes_{\alpha \in \vec\tau}(\delta_2)\),
-			then \(h_1 = k_1\) iff \(h_2 = k_2\), and \(h_1 \ne k_1\) iff \(h_2 \ne k_2\).
+			then \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\).
 	\end{itemize}
 \end{definition}
 
 Note that because the envshells for each value environment are equal, both environments must have the same number of holes in the same locations; the third condition relies on the second condition.
+The third condition boils down to "if pairs of holes are equal for one value environment, then they must also be equal for the other value environment" (and similar for disequality).
+
+\begin{theorem}
+	\(\eqpata\) is an equivalence relation.
+\end{theorem}
+\begin{proof}
+	\(\eqpata\) is defined as separate conditions on shells and holes.
+	The shell condition is direct equality, so \(\eqpata\) restricted soley to shells is clearly an equivalence relation.
+	It remains to show that the \(\eqpata\) conditions for holes form an equivalence relation for value environments.
+
+	\(\eqpata\) is obviously reflexive; for value environment \(\delta\), with holes \(h, k\), we either have \(h = k\) and \(h = k\), or \(h \ne k\) and \(h \ne k\).
+	"And" is idempotent here, so this boils down to saying \(h = k\) or \(h \ne k\), which is clearly true.
+
+	Let \(\delta_1 \eqpata \delta_2\) value environments with respective holes at indices \(i, j\): \(h_1, k_1\) and \(h_2, h_2\).
+	We have \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) and \(h_2 \ne \k_2\).
+	"And" is symmetric, so we have \(h_2 = k_2\) and \(h_1 = k_1\), or \(h_2 \ne k_2\) and \(h_1 \ne \k_1\).
+	This applies to all pairs of holes at any indices, this we have \(\delta_2 \eqpata \delta_1\), and so \(\eqpata\) is symmetric.
+
+	Now assume \(\delta_1 \eqpata \delta_2\) and \(\delta_2 \eqpata \delta_3\), and aim to show \(\delta_1 \eqpata \delta_3\).
+	Choose holes at indices \(i, j\) for each value environment: \(h_1, k_1\), \(h_2, k_2\), and \(h_3, k_3\).
+	There are two cases to consider: \(h_1 = k_1\) and \(h_2 = k_2\) and \(h_3 = k_3\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\) and \(h_3 \ne k_3\).
+	Any other cases do not satisfy the equality pattern precondition.
+	In the first case, we have \(h_1 = k_1\) and \(h_3 = k_3\).
+	In the second case, we have \(h_1 \ne k_1\) and \(h_3 \ne k_3\).
+	This applies for any arbitrarily chosen holes of \(\delta_1, \delta_3\) at corresponding indices, thus we have \(d_1 \eqpata d_3\), and so \(\eqpata\) is transitive.
+
+	\(\eqpata\) is defined as separate conditions on shells and holes.
+	In either case, the conditions are reflexive, symmetric, and transitive.
+	This, \(\eqpata\) is an equivalence relation.
+\end{proof}
 
 \end{document}
 

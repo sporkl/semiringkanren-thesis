@@ -5,6 +5,7 @@
 \usepackage{amssymb}
 \usepackage{stmaryrd}
 \usepackage{mathpartir}
+\usepackage{hyperref}
 
 \title{Polymorphic bottom-up weighted relational programming}
 \author{Dmitri Volkov}
@@ -15,13 +16,15 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 
-\newcommand{\wt}{\mathrel{\textrm{wt}}}
-\newcommand{\vt}{\mathrel{\textrm{vt}}}
+\newcommand{\den}[1]{\llbracket #1 \rrbracket}
 
-\newcommand{\shell}{\mathrel{\textrm{shell}}}
-\newcommand{\holes}{\mathrel{\textrm{holes}}}
-\newcommand{\envshell}{\mathrel{\textrm{envshell}}}
-\newcommand{\envholes}{\mathrel{\textrm{envholes}}}
+\newcommand{\wt}{\mathrel{\mathrm{wt}}}
+\newcommand{\vt}{\mathrel{\mathrm{vt}}}
+
+\DeclareMathOperator{\shell}{shell}
+\DeclareMathOperator{\holes}{holes}
+\DeclareMathOperator{\envshell}{envshell}
+\DeclareMathOperator{\envholes}{envholes}
 
 \newcommand{\eqpat}{\leftrightharpoons}
 \newcommand{\eqpata}{\eqpat_{\alpha}}
@@ -54,8 +57,8 @@ We expand the syntax and typing of minimal semiringKanren to support polymorphic
 	& & | & \texttt{(pair \(v\) \(v\))} \\
 	& & | & x \\
 	\text{Types} & \tau & ::= & \texttt{Unit} \\
-	& & | & \texttt{(Sum \(\tau\) \(\tau\))} \\
-	& & | & \texttt{(Pair \(\tau\) \(\tau\))} \\
+	& & | & \texttt{(Sum \(\tau_1\) \(\tau_2\))} \\
+	& & | & \texttt{(Pair \(\tau_1\) \(\tau_2\))} \\
 	& & | & \alpha \\
 	\text{Relation names} & R & & \\
 	\text{Variables} & x,y,z & & \\
@@ -82,6 +85,7 @@ Also note that in the formal semantics type variables are explicitly specified, 
 Finally, note the use of a type variable substitution, \(\sigma\), when checking the type validity of relation calls.
 
 We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \; \dots \; (x_n : \tau_n)\), or similar.
+We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
 
 \begin{figure}
 \begin{mathpar}
@@ -101,7 +105,7 @@ We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \
 	\and
 	\infer{ }{\Delta,\alpha : * \vdash \alpha \vt}
 \end{mathpar}
-\caption{Inference rules for eype validity judgement.}
+\caption{Inference rules for type validity judgement.}
 \end{figure}
 
 \begin{figure}
@@ -242,52 +246,52 @@ We assume that all needed monomorphic instances of each relation are included in
 
 \begin{figure}
 \begin{align*}
-	\llbracket \texttt{Unit} \rrbracket &= \{\texttt{sole}\} \\
-	\llbracket \texttt{(Sum \(\tau_1\) \(\tau_2\))} \rrbracket &= \{\texttt{(left \(v\))} \mid v \in \llbracket \tau_1 \rrbracket\} \cup \{\texttt{(right \(v\))} \mid v \in \llbracket \tau_2 \rrbracket\} \\
-	\llbracket \texttt{(Prod \(\tau_1\) \(\tau_2\))} \rrbracket &= \{\texttt{(pair \(v_1\) \(v_2\))} \mid v_1 \in \llbracket \tau_1 \rrbracket, v_2 \in \llbracket \tau_2 \rrbracket\}
+	\den{\texttt{Unit}} &= \{\texttt{sole}\} \\
+	\den{\texttt{(Sum \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(left \(v\))} \mid v \in \den{\tau_1}\} \cup \{\texttt{(right \(v\))} \mid v \in \den{\tau_2}\} \\
+	\den{\texttt{(Prod \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(pair \(v_1\) \(v_2\))} \mid v_1 \in \den{\tau_1}, v_2 \in \den{\tau_2}\}
 \end{align*}
 \caption{Denotational semantics for types.}
 \end{figure}
 
 \begin{figure}
 \begin{align*}
-	\llbracket \texttt{sole} \rrbracket (\delta) &= \texttt{sole} \\
-	\llbracket \texttt{(left \(v\))} \rrbracket (\delta) &= \texttt{(left \(\llbracket v \rrbracket (\delta) \))} \\
-	\llbracket \texttt{(right \(v\))} \rrbracket (\delta) &= \texttt{(right \(\llbracket v \rrbracket (\delta) \))} \\
-	\llbracket \texttt{(pair \(v_1\) \(v_2\))} \rrbracket (\delta) &= \texttt{(pair \(\llbracket v_1 \rrbracket (\delta) \) \(\llbracket v_2 \rrbracket (\delta)\))} \\
-	\llbracket x \rrbracket (\delta) &= \delta(x)
+	\den{\texttt{sole}} (\delta) &= \texttt{sole} \\
+	\den{\texttt{(left \(v\))}} (\delta) &= \texttt{(left \(\den{v} (\delta) \))} \\
+	\den{\texttt{(right \(v\))}} (\delta) &= \texttt{(right \(\den{v} (\delta) \))} \\
+	\den{\texttt{(pair \(v_1\) \(v_2\))}} (\delta) &= \texttt{(pair \(\den{v_1} (\delta) \) \(\den{v_2} (\delta)\))} \\
+	\den{x} (\delta) &= \delta(x)
 \end{align*}
 \caption{Denotational semantics for values.}
 \end{figure}
 
 \begin{figure}
 \begin{align*}
-	\llbracket \texttt{(conj \(g_1\) \(g_2\))} \rrbracket (\eta;\delta) &= \llbracket g_1 \rrbracket (\eta;\delta) \times \llbracket g_2 \rrbracket (\eta;\delta) \\
-	\llbracket \texttt{(disj \(g_1\) \(g_2\))} \rrbracket (\eta;\delta) &= \llbracket g_1 \rrbracket (\eta;\delta) + \llbracket g_2 \rrbracket (\eta;\delta) \\
-	\llbracket \texttt{(fresh ((\(x : \tau\))) \(g\))} \rrbracket (\eta;\delta) &= \sum_{v \in \llbracket \tau \rrbracket} \llbracket g \rrbracket (\eta; \delta\{x \mapsto v\}) \\
-	\llbracket \texttt{(== \(v_1\) \(v_2\))} \rrbracket (\eta; \delta) &=
+	\den{\texttt{(conj \(g_1\) \(g_2\))}} (\eta;\delta) &= \den{g_1} (\eta;\delta) \times \den{g_2} (\eta;\delta) \\
+	\den{\texttt{(disj \(g_1\) \(g_2\))}} (\eta;\delta) &= \den{g_1} (\eta;\delta) + \den{g_2} (\eta;\delta) \\
+	\den{\texttt{(fresh ((\(x : \tau\))) \(g\))}} (\eta;\delta) &= \sum_{v \in \den{\tau}} \den{g} (\eta; \delta\{x \mapsto v\}) \\
+	\den{\texttt{(== \(v_1\) \(v_2\))}} (\eta; \delta) &=
 	\begin{cases}
-		1 & \text{if } \llbracket v_1 \rrbracket (\delta) = \llbracket v_2 \rrbracket (\delta) \\
-		0 & \text{if } \llbracket v_1 \rrbracket (\delta) \ne \llbracket v_2 \rrbracket (\delta)
+		1 & \text{if } \den{v_1} (\delta) = \den{v_2} (\delta) \\
+		0 & \text{if } \den{v_1} (\delta) \ne \den{v_2} (\delta)
 	\end{cases} \\
-	\llbracket \texttt{(=/= \(v_1\) \(v_2\))} \rrbracket (\eta; \delta) &=
+	\den{\texttt{(=/= \(v_1\) \(v_2\))}} (\eta; \delta) &=
 	\begin{cases}
-		1 & \text{if } \llbracket v_1 \rrbracket (\delta) \ne \llbracket v_2 \rrbracket (\delta) \\
-		0 & \text{if } \llbracket v_1 \rrbracket (\delta) = \llbracket v_2 \rrbracket (\delta)
+		1 & \text{if } \den{v_1} (\delta) \ne \den{v_2} (\delta) \\
+		0 & \text{if } \den{v_1} (\delta) = \den{v_2} (\delta)
 	\end{cases} \\
-	\llbracket \texttt{(\(R\) \(\vec v\))} \rrbracket (\eta; \delta) &= \eta(R_{\vec\alpha = |\sigma(\vec\alpha)|})(\llbracket \vec v \rrbracket(\delta))
+	\den{\texttt{(\(R\) \(\vec v\))}} (\eta; \delta) &= \eta(R_{\vec\alpha = |\sigma(\vec\alpha)|})(\den{\vec v}(\delta))
 	\text{ where } \vec v : \sigma(\vec\tau) \\
-	\llbracket \texttt{(factor \(r\))} \rrbracket (\eta; \delta) &= r
+	\den{\texttt{(factor \(r\))}} (\eta; \delta) &= r
 \end{align*}
 \caption{Denotational semantics for goals.}
 \end{figure}
 
 \begin{figure}
 \begin{gather*}
-	\llbracket \texttt{(defrel (\(R_{\vec \alpha = |\sigma(\vec \alpha)|}\) \(\forall \vec \alpha\) . (\(\vec x : \sigma (\vec \tau)\)) g)} \rrbracket (\eta) =
-	(\vec i) \mapsto \llbracket g \rrbracket (\eta; \{\vec x \mapsto \llbracket \vec i \rrbracket(\cdot) \} \\
-	\llbracket \textit{Rel}_1, \dots, \textit{Rel}_Q \rrbracket = \;
-	\mathrel{\text{fix}} \eta \mathrel{\text{in}} \{R_1 \mapsto \llbracket \textit{Rel}_1 \rrbracket (\eta), \dots, R_Q \mapsto \llbracket \textit{Rel}_Q \rrbracket (\eta) \}
+	\den{\texttt{(defrel (\(R_{\vec \alpha = |\sigma(\vec \alpha)|}\) \(\forall \vec \alpha\) . (\(\vec x : \sigma (\vec \tau)\)) g)}} (\eta) =
+	(\vec i) \mapsto \den{g} (\eta; \{\vec x \mapsto \den{\vec i}(\cdot) \} \\
+	\den{\textit{Rel}_1, \dots, \textit{Rel}_Q} = \;
+	\mathrel{\text{fix}} \eta \mathrel{\text{in}} \{R_1 \mapsto \den{\textit{Rel}_1} (\eta), \dots, R_Q \mapsto \den{\textit{Rel}_Q} (\eta) \}
 \end{gather*}
 \caption{Denotational semantics for relations and programs.}
 \end{figure}
@@ -332,16 +336,84 @@ We use \(\holes_{\alpha \in \tau}(v)\) to denote the values of the holes corresp
 We also have versions of these functions which apply to \emph{value environments} (notated as \(\delta\) in the semantics) with corresponding type environments.
 
 \begin{align*}
-	\envshell() &= \emptyset \\
+	\envshell_{\emptyset}() &= \emptyset \\
 	\envshell_{\tau, \vec\tau}(x,\vec x \mapsto v, \vec v) &= x,\vec x \mapsto \shell_{\tau}(v), \envshell_{\vec\tau}(\vec v)
 \end{align*}
 
 \begin{align*}
-	\envholes_{\alpha \in}() &= \emptyset \\
+	\envholes_{\alpha \in \emptyset}() &= \emptyset \\
 	\envholes_{\alpha \in \tau,\vec \tau}(x, \vec x \mapsto v, \vec v) &= \holes_{\alpha \in \tau}(v),\envholes_{\alpha \in \vec\tau}(\vec v)
 \end{align*}
 
 Note that extracted holes are not labeled; we can find the corresponding \texttt{(hole \(...\))} in the shell by an in-order search through the shell.
+
+% \begin{lemma} \label{lem:shell_holes}
+% 	Let \(v_1, v_2 : \tau\).
+% 	\(v_1 = v_2\) iff \(\shell_\tau(v_1) = \shell_\tau(v_2))\), and \(\forall \alpha \in \tau \; \holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2)\).
+% 	\(v_1 \ne v_2 \) iff \(\shell_\tau(v_1) \ne \shell_|tau(v_2\), or \(\exists \alpha \in \tau \; \holes_{\alpha \in \tau}(v_1) \ne \holes_{\alpha \in \tau}(v_2)\).
+% 	\(x \ker(x) \mod y\).
+% \end{lemma}
+% \begin{proof}
+% 	TODO
+% \end{proof}
+
+% \begin{lemma}
+% 	\(\envshell_{\Delta}(\delta_1) = \envshell_{\Delta}(\delta_2)\) if and only if:
+% 	for all \(v, \tau\) satisfying \(\Delta \vdash v : \tau\), \(\shell_{\tau}(\den{v}(\delta_1)) = \shell_{\tau}(\den{v}(\delta_2))\).
+% \end{lemma}
+% \begin{proof}
+% 	TODO
+% \end{proof}
+
+\begin{lemma}
+	Let \(\Delta \vdash v_1 : \tau\) and \(\Delta \vdash v_2 : \tau\).
+	Then \(v_1 = v_2\) iff \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\).
+\end{lemma}
+\begin{proof}
+	Assuming \(v_1 = v_2\), we trivially have \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_\alpha(v_1) = \holes_\alpha(v_2) \; \forall \alpha \in \tau\) by substitution.
+
+	Now assume \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\), and aim to show \(v_1 = v_2\).
+	Proof by induction on \(\Delta \vdash v_1 : \tau\) and \(\Delta \vdash v_2 : \tau\).
+	\begin{itemize}
+		\item Case \(\tau = \texttt{Unit}\).
+			We have \(\shell_{\texttt{Unit}}(v_1) = \shell_{\texttt{Unit}}(v_2)\).
+			This is only possible when \(v_1 = v_2 = \texttt{sole}\).
+		\item Case \(\tau = \texttt{(Sum \(\tau_1\) \(\tau_2\))}\).
+			We have \(\shell_{\texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2)\).
+			This is only possible in two cases.
+			\begin{itemize}
+				\item Subcase \(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\) where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\).
+					We know \(\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\),
+					so we can deduce by definition that \(\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau\).
+					By the inductive hypothesis, we now know \(v_1' = v_2'\).
+					Thus \(\texttt{(left \(v_1'\))} = \texttt{(left \(v_2'\))}\), and so \(v_1 = v_2\).
+				\item Subcase \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\) where \(\shell_{\tau_2}(v_1') = \shell_{\tau_2}(v_2')\).
+					We know \(\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\),
+					so we can deduce by definition that \(\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau\).
+					By the inductive hypothesis, we now know \(v_1' = v_2'\).
+					Thus \(\texttt{(right \(v_1'\))} = \texttt{(right \(v_2'\))}\), and so \(v_1 = v_2\).
+			\end{itemize}
+			In either case \(v_1 = v_2\).
+		\item Case \(\tau = \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
+			We have \(\shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1)\).
+			This is only possible when \(v_1 = \texttt{(pair \(v_1'\) \(v_1''\))}\) and \(v_2 = \texttt{(pair \(v_2'\) \(v_2''\))}\),
+			where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\) and \(\shell_{\tau_2}(v_1'') = \shell_{\tau_2}(v_2'')\).
+			We also have \(\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2) \;
+			\forall \alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
+			Thus by definition of \(\holes\), we know: \(\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau_1\),
+			and \(\holes_{\alpha \in \tau_2}(v_1'') = \holes_{\alpha \in \tau_2}(v_2'') \; \forall \alpha \in \tau_2\).
+			By the inductive hypothesis, we have \(v_1' = v_2'\) and \(v_1'' = v_2''\).
+			Thus, \(\texttt{(pair \(v_1'\) \(v_1''\))} = \texttt{(pair \(v_2'\) \(v_2''\))}\), and so \(v_1 = v_2\).
+		\item Case \(\tau = \alpha\).
+			By definition, we know \(\holes_{\alpha \in \alpha}(v_1) = v_1\) and \(\holes_{\alpha \in \alpha}(v_2) = v_2\).
+			By hypothesis, \(\holes_{\alpha \in \alpha}(v_1) = \holes_{\alpha \in \alpha}(v_2)\).
+			Thus by transitivity of equality, \(v_1 = v_2\).
+	\end{itemize}
+	In any case, we have \(v_1 = v_2\).
+\end{proof}
+
+
+% same lemma as above, but for holes?
 
 \begin{definition}
 	We define \(\delta_1 \eqpata \delta_2\) when value environments \(\delta_1\) and \(\delta_2\) have the same \emph{equality pattern} for type variable \(\alpha\):
@@ -358,9 +430,9 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 Note that because the envshells for each value environment are equal, both environments must have the same number of holes in the same locations; the third condition relies on the second condition.
 The third condition boils down to "if pairs of holes are equal for one value environment, then they must also be equal for the other value environment" (and similar for disequality).
 
-\begin{theorem}
+\begin{lemma}
 	\(\eqpata\) is an equivalence relation.
-\end{theorem}
+\end{lemma}
 \begin{proof}
 	\(\eqpata\) is defined as separate conditions on shells and holes.
 	The shell condition is direct equality, so \(\eqpata\) restricted soley to shells is clearly an equivalence relation.
@@ -386,6 +458,142 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	In either case, the conditions are reflexive, symmetric, and transitive.
 	This, \(\eqpata\) is an equivalence relation.
 \end{proof}
+
+\begin{lemma}
+	Let \(\delta_1, \delta_2\) be value environments both with corresponding type environment \(\Delta\), where \(\delta_1 \eqpata \delta_2\).
+	Additionally, let \(v_1, v_2 : \tau\) be values.
+	\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) if and only if \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2))\), and
+	\(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) if and only if \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2))\).
+\end{lemma}
+% \begin{proof}
+% 	TODO: redo this once have (far) above lemma).
+% 	Proof by induction on \(\Delta \vdash v_1, v_2 : \tau\).
+% 	We first handle the subcases where one or both of \(v_1, v_2\) are variables, as these cases are not specific to the type.
+% 	\begin{itemize}
+% 		\item Case \(v_1, v_2 : \tau\) where \(v_1\) is a value and \(v_2\) is a variable.
+
+
+% 		\item Case \(v_1, v_2 : \tau\) where \(v_1, v_2\) are variables.
+% 			\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\), so 
+			
+% 		\item Case \(v_1, v_2 : \texttt{Unit}\).
+% 			By inversion, \(v_1, v_2 = \texttt{sole}\).
+% 			\(\den{\texttt{sole}}(\delta_2) = \texttt{sole}\), so \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2) = \texttt{sole}\).
+% 		\item Case \(v_1, v_2 : \texttt{(Sum \(\tau_1\) \(\tau_2\))}\)
+% 			By inversion and \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\), we either have:
+% 			\(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\), or \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\);
+% 			where in either case \(\den{v_1'}(\delta_1) = \den{v_2'}(\delta_1)\).
+% 			By the induction hypothesis, we therefore have \(\den{v_1'}(\delta_2) = \den{v_2'}(\delta_2)\).
+% 			Thus, we have both \(\den{\texttt{(left \(v_1'\))}}(\delta_2) = \den{\texttt{(left \(v_2'\))}}(\delta_2)\),
+% 			and \(\den{\texttt{(right \(v_1'\))}}(\delta_2) = \den{\texttt{(right \(v_2'\))}}(\delta_2)\).
+% 			In either case of \(v_1, v_2 = \texttt{(left \(\dots\))}\) or \(v_1, v_2 = \texttt{(right \(\dots\))}\), we have \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
+% 		\item Case \(v_1, v_2 : \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
+% 			% TODO: GO FROM HERE
+% 		\item Case \(v_1, v_2 : \alpha\).
+% 			% TODO: GO FROM HERE; v_1 and v_2 must be equal variables in delta1, and delta2 has same eqpat, so v1 and v2 must be equal variables in delta2
+% 	\end{itemize}
+% \end{proof}
+
+% \begin{proof}
+% 	First assume \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and aim to prove \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
+% 	Let \(v = \den{v_1}(\delta_1) = \den{v_2}(\delta_1)\).
+% 	By Lemma \ref{lem:shell_holes}, \(\shell_\tau(\den{v_1}(\delta_1)) = \shell_\tau(\den{v_2}(\delta_1))\)
+% 	and \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\).
+% \end{proof}
+
+% \begin{proof}
+% 	Induction on the fact that \(v_1\) and \(v_2\) are values.
+% 	\begin{itemize}
+% 		\item Case: Neither \(v_1\) nor \(v_2\) are variables.
+% 			TODO: cases on concrete value constructors, with inductive hypothesis.
+% 		\item Case: \(v_1\) and \(v_2\) are both variables.
+% 			if type is not alpha, then same shell. so holds by eqpat
+% 			if type is alpha, then same hole. so holds by eqpat
+% 		\item Case: \(v_1\) is a variable \(x\), and \(v_2\) is non-variable value \(v\) (that may contain variables inside).
+% 			den(v_1) = den(v_2)
+% 			shell(den(v_1)(delta1)) = shell(den(v_2)(delta(2))) and holes(den(v_1)) = holes(den(v_2)) % can take shell/holes of values
+% 			within d1, shell of 
+
+% 			den(x) = den(v)
+% 			shell(den(x)(d1)) = shell(den(v)(d1))
+% 			envshell(d1) = ...,x->shell(x),... = ...,x->shell(v),... = envshell(d2) by eqpat
+% 			(this doesn't quite work, because v might contain variables)
+
+% 			cases on value constructors for v2
+% 			- sole. then shell is sole.
+% 			- left _. then shell is left _. IH?
+% 			so den(x) = left r = den(v). for some concrete r
+% 			so envshell(d1) = ...,x->left r,... = envshell(d2)
+
+% 			d1 = ..., x->left r, ...
+% 			d2 = ..., x->left r', ...
+
+% 			by IH, r eqpat r'?
+
+% 			I think I need some lemma about comparing variables to non-variable values, cause I need induction over shell structure somehow
+
+% 			lemma.  if x is a variable, v is a non-variable value, den(x)(delta1) = den(v)(delta1) = c
+% 			so delta1 = ...,x -> c,...
+% 			have delta1 eqpat delta2 so
+% 			delta2 = ...,x -> c', ... where shell(c) = shell(c') and holes(c) = holes(c')
+
+% 			lemma. if den(x)(delta1) = den(v)(delta1) = c,
+
+% 			den(x)(delta1) = den(v)(delta2) = left w.
+% 			shell(x(delta1)) = left w = shell(v(delta1))
+% 			holes(x(delta1)) = holes(w) = holes(v(delta1))
+% 			delta1 eqpat delta2.
+% 			shell(x(delta2)) = shell(left w) = shell(v(delta2))
+% 			holes(x(delta2)) = holes(w') = holes(w(delta2)) by lemma below
+% 			shell and holes under delta2 are equal, so x and w must be equal under delta2
+
+% 			need lemma if v_1(delta1) = holes v_2(delta1) and delta1 eqpat delta2 then holes(v_1(delta_2)) = holes(v_2)(delta2)
+% 			and condition shell(v1) = shell(v2)
+% 			let h_1, ..., h_n be holes under delta1, k_1, ..., k_n be holes under delta2 for v_1. ' for v_2.
+% 			holes must occur under variables, so they must occur in the value environment
+% 			any hole of v_1/v_2 must correspond to specific index i in delta
+% 			same i for v_1 and v_2, so same hole, so must be same
+
+% 			difficulty is stemming from don't have a way to talk about which holes come from which variables?
+% 			I think if you know that v_1 is a variable, this isn't an issue
+% 			I think this doesn't need to be sublemma
+
+% 			case v_1 = x, v_2 = w
+% 			then shell(x(d1)) = shell(w(d1))
+% 			and holes(x(d1)) = holes(w(d1))
+% 			know shell(x(d2)) = shell(w(d1)) = shell(w(d2)) by definition of eqpat
+% 			know holes(x(d2)) = holes(w(d2))
+% 			let h, k be holes at indices i,j in holes(x(d2)), holes(w(d2)).
+% 			although w is not a variable, we can figure out which variables the holes come from.
+% 			this we can find the indices i', j' of h, k in envholes(d1).
+% 			by definition of eqpat, h = k under d, so h = k under d2.
+% 			so holes(x(d2)) = holes(w(d2))
+% 			so x(d2) = w(d2)
+% 	\end{itemize}
+% \end{proof}
+
+
+\begin{definition}
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type \(\tau\), denoted \(\#_\alpha \tau\), as follows:
+	\begin{itemize}
+		\item \(\#_\alpha \texttt{Unit} = 0\)
+		\item \(\#_\alpha \texttt{(Sum \(\tau_1\) \(\tau_2\))} = \max(\#_\alpha \tau_1, \#_\alpha \tau_2)\)
+		\item \(\#_\alpha \texttt{(Prod \(\tau_1\) \(\tau_2\))} = \#_\alpha \tau_1 + \#_\alpha \tau_2\)
+		\item \(\#_\alpha \alpha = 1\)
+	\end{itemize}
+\end{definition}
+
+More specifically, this is the maximum number of \(\alpha\)-typed sub-values that can occur in a value of type \(\tau\).
+This generalizes cleanly to type environments:
+
+\begin{definition}
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\vec\tau\), denoted \(\#_\alpha \vec\tau\), as follows:
+	\begin{itemize}
+		\item \(\#_\alpha \emptyset = 0\)
+		\item \(\#_\alpha \tau, \vec\tau = \#_\alpha \tau + \#_\alpha \vec\tau\)
+	\end{itemize}
+\end{definition}
+
 
 \end{document}
 

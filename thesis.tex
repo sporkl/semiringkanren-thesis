@@ -27,7 +27,7 @@
 \DeclareMathOperator{\envholes}{envholes}
 
 \newcommand{\eqpat}{\leftrightharpoons}
-\newcommand{\eqpata}{\eqpat_{\alpha}}
+\newcommand{\eqpatD}{\eqpat_{\Delta}}
 
 \begin{document}
 
@@ -337,35 +337,18 @@ We also have versions of these functions which apply to \emph{value environments
 
 \begin{align*}
 	\envshell_{\emptyset}() &= \emptyset \\
-	\envshell_{\tau, \vec\tau}(x,\vec x \mapsto v, \vec v) &= x,\vec x \mapsto \shell_{\tau}(v), \envshell_{\vec\tau}(\vec v)
+	\envshell_{\tau, \Delta}(x,\vec x \mapsto v, \vec v) &= x,\vec x \mapsto \shell_{\tau}(v), \envshell_{\Delta}(\vec v)
 \end{align*}
 
 \begin{align*}
 	\envholes_{\alpha \in \emptyset}() &= \emptyset \\
-	\envholes_{\alpha \in \tau,\vec \tau}(x, \vec x \mapsto v, \vec v) &= \holes_{\alpha \in \tau}(v),\envholes_{\alpha \in \vec\tau}(\vec v)
+	\envholes_{\alpha \in \tau,\Delta}(x, \vec x \mapsto v, \vec v) &= \holes_{\alpha \in \tau}(v),\envholes_{\alpha \in \Delta}(\vec v)
 \end{align*}
 
 Note that extracted holes are not labeled; we can find the corresponding \texttt{(hole \(...\))} in the shell by an in-order search through the shell.
 
-% \begin{lemma} \label{lem:shell_holes}
-% 	Let \(v_1, v_2 : \tau\).
-% 	\(v_1 = v_2\) iff \(\shell_\tau(v_1) = \shell_\tau(v_2))\), and \(\forall \alpha \in \tau \; \holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2)\).
-% 	\(v_1 \ne v_2 \) iff \(\shell_\tau(v_1) \ne \shell_|tau(v_2\), or \(\exists \alpha \in \tau \; \holes_{\alpha \in \tau}(v_1) \ne \holes_{\alpha \in \tau}(v_2)\).
-% 	\(x \ker(x) \mod y\).
-% \end{lemma}
-% \begin{proof}
-% 	TODO
-% \end{proof}
-
-% \begin{lemma}
-% 	\(\envshell_{\Delta}(\delta_1) = \envshell_{\Delta}(\delta_2)\) if and only if:
-% 	for all \(v, \tau\) satisfying \(\Delta \vdash v : \tau\), \(\shell_{\tau}(\den{v}(\delta_1)) = \shell_{\tau}(\den{v}(\delta_2))\).
-% \end{lemma}
-% \begin{proof}
-% 	TODO
-% \end{proof}
-
 \begin{lemma}
+	\label{lem:values-shells-holes}
 	Let \(\Delta \vdash v_1 : \tau\) and \(\Delta \vdash v_2 : \tau\).
 	Then \(v_1 = v_2\) iff \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\).
 \end{lemma}
@@ -375,26 +358,26 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 	Now assume \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\), and aim to show \(v_1 = v_2\).
 	Proof by induction on \(\Delta \vdash v_1 : \tau\) and \(\Delta \vdash v_2 : \tau\).
 	\begin{itemize}
-		\item Case \(\tau = \texttt{Unit}\).
+		\item Case: \(\tau = \texttt{Unit}\).
 			We have \(\shell_{\texttt{Unit}}(v_1) = \shell_{\texttt{Unit}}(v_2)\).
 			This is only possible when \(v_1 = v_2 = \texttt{sole}\).
-		\item Case \(\tau = \texttt{(Sum \(\tau_1\) \(\tau_2\))}\).
+		\item Case: \(\tau = \texttt{(Sum \(\tau_1\) \(\tau_2\))}\).
 			We have \(\shell_{\texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2)\).
 			This is only possible in two cases.
 			\begin{itemize}
-				\item Subcase \(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\) where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\).
+				\item Subcase: \(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\) where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\).
 					We know \(\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\),
 					so we can deduce by definition that \(\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau\).
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
 					Thus \(\texttt{(left \(v_1'\))} = \texttt{(left \(v_2'\))}\), and so \(v_1 = v_2\).
-				\item Subcase \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\) where \(\shell_{\tau_2}(v_1') = \shell_{\tau_2}(v_2')\).
+				\item Subcase: \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\) where \(\shell_{\tau_2}(v_1') = \shell_{\tau_2}(v_2')\).
 					We know \(\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\),
 					so we can deduce by definition that \(\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau\).
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
 					Thus \(\texttt{(right \(v_1'\))} = \texttt{(right \(v_2'\))}\), and so \(v_1 = v_2\).
 			\end{itemize}
 			In either case \(v_1 = v_2\).
-		\item Case \(\tau = \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
+		\item Case: \(\tau = \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
 			We have \(\shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1)\).
 			This is only possible when \(v_1 = \texttt{(pair \(v_1'\) \(v_1''\))}\) and \(v_2 = \texttt{(pair \(v_2'\) \(v_2''\))}\),
 			where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\) and \(\shell_{\tau_2}(v_1'') = \shell_{\tau_2}(v_2'')\).
@@ -404,7 +387,7 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 			and \(\holes_{\alpha \in \tau_2}(v_1'') = \holes_{\alpha \in \tau_2}(v_2'') \; \forall \alpha \in \tau_2\).
 			By the inductive hypothesis, we have \(v_1' = v_2'\) and \(v_1'' = v_2''\).
 			Thus, \(\texttt{(pair \(v_1'\) \(v_1''\))} = \texttt{(pair \(v_2'\) \(v_2''\))}\), and so \(v_1 = v_2\).
-		\item Case \(\tau = \alpha\).
+		\item Case: \(\tau = \alpha\).
 			By definition, we know \(\holes_{\alpha \in \alpha}(v_1) = v_1\) and \(\holes_{\alpha \in \alpha}(v_2) = v_2\).
 			By hypothesis, \(\holes_{\alpha \in \alpha}(v_1) = \holes_{\alpha \in \alpha}(v_2)\).
 			Thus by transitivity of equality, \(v_1 = v_2\).
@@ -412,17 +395,15 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 	In any case, we have \(v_1 = v_2\).
 \end{proof}
 
-
-% same lemma as above, but for holes?
-
 \begin{definition}
-	We define \(\delta_1 \eqpata \delta_2\) when value environments \(\delta_1\) and \(\delta_2\) have the same \emph{equality pattern} for type variable \(\alpha\):
+	\label{def:eqpat}
+	We define \(\delta_1 \eqpatD \delta_2\) when value environments \(\delta_1\) and \(\delta_2\) have the same \emph{equality pattern} under type environment \(\Delta\).
 	\begin{itemize}
-		\item \(\delta_1\) and \(\delta_2\) both have type environment \(\vec\tau\), and
-		\item \(\envshell_{\vec\tau}(\delta_1) = \envshell_{\vec\tau}(\delta_2)\), and
-		\item for all indices \(i, j\),
-			holes \(h_1, k_1\) at those indices in \(\envholes_{\alpha \in \vec\tau}(\delta_1)\),
-			and holes \(h_2, k_2\) at those indices in \(\envholes_{\alpha \in \vec\tau}(\delta_2)\),
+		\item \(\delta_1\) and \(\delta_2\) both have type environment \(\Delta\), and
+		\item \(\envshell_{\Delta}(\delta_1) = \envshell_{\Delta}(\delta_2)\), and
+		\item for all type variables \(\alpha \in \Delta\), for all indices \(i, j\),
+			holes \(h_1, k_1\) at those indices in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
+			and holes \(h_2, k_2\) at those indices in \(\envholes_{\alpha \in \Delta}(\delta_2)\),
 			then \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\).
 	\end{itemize}
 \end{definition}
@@ -431,147 +412,74 @@ Note that because the envshells for each value environment are equal, both envir
 The third condition boils down to "if pairs of holes are equal for one value environment, then they must also be equal for the other value environment" (and similar for disequality).
 
 \begin{lemma}
-	\(\eqpata\) is an equivalence relation.
+	\label{lem:eqpat-equivrel}
+	\(\eqpatD\) is an equivalence relation.
 \end{lemma}
 \begin{proof}
-	\(\eqpata\) is defined as separate conditions on shells and holes.
-	The shell condition is direct equality, so \(\eqpata\) restricted soley to shells is clearly an equivalence relation.
-	It remains to show that the \(\eqpata\) conditions for holes form an equivalence relation for value environments.
+	\(\eqpatD\) is defined as separate conditions on shells and holes.
+	The shell condition is direct equality, so \(\eqpatD\) restricted soley to shells is clearly an equivalence relation.
+	It remains to show that the \(\eqpatD\) conditions for holes form an equivalence relation for value environments.
 
-	\(\eqpata\) is obviously reflexive; for value environment \(\delta\), with holes \(h, k\), we either have \(h = k\) and \(h = k\), or \(h \ne k\) and \(h \ne k\).
-	"And" is idempotent here, so this boils down to saying \(h = k\) or \(h \ne k\), which is clearly true.
+	\(\eqpatD\) is obviously reflexive; for holes \(h, k\) at type \(\alpha\), we either have \(h = k\) and \(h = k\), or \(h \ne k\) and \(h \ne k\).
+	This boils down to saying \(h = k\) or \(h \ne k\), which is clearly true.
 
-	Let \(\delta_1 \eqpata \delta_2\) value environments with respective holes at indices \(i, j\): \(h_1, k_1\) and \(h_2, h_2\).
+	Let \(\delta_1 \eqpatD \delta_2\) be value environments with respective holes at indices \(i, j\): \(h_1, k_1\) and \(h_2, h_2\), for type \(\alpha\).
 	We have \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) and \(h_2 \ne \k_2\).
 	"And" is symmetric, so we have \(h_2 = k_2\) and \(h_1 = k_1\), or \(h_2 \ne k_2\) and \(h_1 \ne \k_1\).
-	This applies to all pairs of holes at any indices, this we have \(\delta_2 \eqpata \delta_1\), and so \(\eqpata\) is symmetric.
+	This applies to all pairs of holes at any indices, at for any type variable, thus we have \(\delta_2 \eqpatD \delta_1\), and so \(\eqpatD\) is symmetric.
 
-	Now assume \(\delta_1 \eqpata \delta_2\) and \(\delta_2 \eqpata \delta_3\), and aim to show \(\delta_1 \eqpata \delta_3\).
-	Choose holes at indices \(i, j\) for each value environment: \(h_1, k_1\), \(h_2, k_2\), and \(h_3, k_3\).
+	Now assume \(\delta_1 \eqpatD \delta_2\) and \(\delta_2 \eqpatD \delta_3\), and aim to show \(\delta_1 \eqpatD \delta_3\).
+	Choose type variable \(\alpha\), and \(\alpha\)-holes at indices \(i, j\) for each value environment: \(h_1, k_1\), \(h_2, k_2\), and \(h_3, k_3\).
 	There are two cases to consider: \(h_1 = k_1\) and \(h_2 = k_2\) and \(h_3 = k_3\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\) and \(h_3 \ne k_3\).
 	Any other cases do not satisfy the equality pattern precondition.
 	In the first case, we have \(h_1 = k_1\) and \(h_3 = k_3\).
 	In the second case, we have \(h_1 \ne k_1\) and \(h_3 \ne k_3\).
-	This applies for any arbitrarily chosen holes of \(\delta_1, \delta_3\) at corresponding indices, thus we have \(d_1 \eqpata d_3\), and so \(\eqpata\) is transitive.
+	This applies for any arbitrarily chosen \(\alpha\)-holes of \(\delta_1, \delta_3\) at corresponding indices, for any \(\alpha\), thus we have \(d_1 \eqpatD d_3\), and so \(\eqpatD\) is transitive.
 
-	\(\eqpata\) is defined as separate conditions on shells and holes.
+	\(\eqpatD\) is defined as separate conditions on shells and holes.
 	In either case, the conditions are reflexive, symmetric, and transitive.
-	This, \(\eqpata\) is an equivalence relation.
+	This, \(\eqpatD\) is an equivalence relation.
 \end{proof}
 
 \begin{lemma}
-	Let \(\delta_1, \delta_2\) be value environments both with corresponding type environment \(\Delta\), where \(\delta_1 \eqpata \delta_2\).
+	Let \(\delta_1, \delta_2\) be value environments both with corresponding type environment \(\Delta\), where \(\delta_1 \eqpatD \delta_2\).
 	Additionally, let \(v_1, v_2 : \tau\) be values.
-	\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) if and only if \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2))\), and
-	\(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) if and only if \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2))\).
+	\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2))\), and
+	\(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2))\).
 \end{lemma}
-% \begin{proof}
-% 	TODO: redo this once have (far) above lemma).
-% 	Proof by induction on \(\Delta \vdash v_1, v_2 : \tau\).
-% 	We first handle the subcases where one or both of \(v_1, v_2\) are variables, as these cases are not specific to the type.
-% 	\begin{itemize}
-% 		\item Case \(v_1, v_2 : \tau\) where \(v_1\) is a value and \(v_2\) is a variable.
+\begin{proof}
+	Note that we only need to prove one direction for each "iff"; the other direction holds by symmetry.
+	First assume \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and aim to prove \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2))\).
 
+	By lemma \ref{lem:values-shells-holes}, we know \(\shell_{\tau}(\den{v_1}(\delta_1)) = \shell_{\tau}(\den{v_2}(\delta_1))\)
+	and \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1)) \; \forall \alpha \in \tau\).
+	\(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\).
+	% do I need to explain this next sentence better?
+	Thus \(\shell_\tau(\den{v_1}(\delta_1)) = \shell_\tau(\den{v_1}(\delta_2))\) and \(\shell_\tau(\den{v_2}(\delta_1)) = \shell_\tau(\den{v_2}(\delta_2))\).
+	By transitivity of equality, we therefore know \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\).
 
-% 		\item Case \(v_1, v_2 : \tau\) where \(v_1, v_2\) are variables.
-% 			\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\), so 
-			
-% 		\item Case \(v_1, v_2 : \texttt{Unit}\).
-% 			By inversion, \(v_1, v_2 = \texttt{sole}\).
-% 			\(\den{\texttt{sole}}(\delta_2) = \texttt{sole}\), so \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2) = \texttt{sole}\).
-% 		\item Case \(v_1, v_2 : \texttt{(Sum \(\tau_1\) \(\tau_2\))}\)
-% 			By inversion and \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\), we either have:
-% 			\(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\), or \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\);
-% 			where in either case \(\den{v_1'}(\delta_1) = \den{v_2'}(\delta_1)\).
-% 			By the induction hypothesis, we therefore have \(\den{v_1'}(\delta_2) = \den{v_2'}(\delta_2)\).
-% 			Thus, we have both \(\den{\texttt{(left \(v_1'\))}}(\delta_2) = \den{\texttt{(left \(v_2'\))}}(\delta_2)\),
-% 			and \(\den{\texttt{(right \(v_1'\))}}(\delta_2) = \den{\texttt{(right \(v_2'\))}}(\delta_2)\).
-% 			In either case of \(v_1, v_2 = \texttt{(left \(\dots\))}\) or \(v_1, v_2 = \texttt{(right \(\dots\))}\), we have \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
-% 		\item Case \(v_1, v_2 : \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
-% 			% TODO: GO FROM HERE
-% 		\item Case \(v_1, v_2 : \alpha\).
-% 			% TODO: GO FROM HERE; v_1 and v_2 must be equal variables in delta1, and delta2 has same eqpat, so v1 and v2 must be equal variables in delta2
-% 	\end{itemize}
-% \end{proof}
+	Choose \(\alpha \in \tau\).
+	We also may deduce by lemma \ref{lem:values-shells-holes} that \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\).
+	We know \(v_1\) and \(v_2\) have the same shells under \(\delta_1\),
+	so we can choose holes \(h_1 \in \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))\) at index \(i\), and \(k_1 \in \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\) both at index \(j\) where \(i = j\).
+	So holes \(h\) and \(k\) are at the same index \(i = j\) within their respective value shells.
+	Because of this, and because \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\), we know \(h_1 = k_1\).
+	We can determine the indices \(i_\delta, j_\delta\) of \(h_1, k_1\) in \(\delta_1\) by considering the positions of variables within \(v_1\) and \(v_2\), and counting accordingly.
+	\(\delta_1 \eqpatD \delta_2\), thus \(h_2 = k_2\) for holes \(h_2, k_2\) at indices \(i_\delta, j_\delta\) in \(\delta_2\).
+	Because we know \(\envshell_\Delta(\delta_1) = \envshell_{\Delta}(\delta_2)\), we know holes \(h_2, k_2\) are at indices \(i = j\) within the value shells of \(v_1, v_2\).
+	\(h_2 = k_2\) holds for any chosen indices \(i = j\) and type variable \(\alpha\),
+	hence \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
 
-% \begin{proof}
-% 	First assume \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and aim to prove \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
-% 	Let \(v = \den{v_1}(\delta_1) = \den{v_2}(\delta_1)\).
-% 	By Lemma \ref{lem:shell_holes}, \(\shell_\tau(\den{v_1}(\delta_1)) = \shell_\tau(\den{v_2}(\delta_1))\)
-% 	and \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\).
-% \end{proof}
+	We have shown \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\) and
+	\(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
+	Thus by lemma \ref{lem:values-shells-holes}, \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
 
-% \begin{proof}
-% 	Induction on the fact that \(v_1\) and \(v_2\) are values.
-% 	\begin{itemize}
-% 		\item Case: Neither \(v_1\) nor \(v_2\) are variables.
-% 			TODO: cases on concrete value constructors, with inductive hypothesis.
-% 		\item Case: \(v_1\) and \(v_2\) are both variables.
-% 			if type is not alpha, then same shell. so holds by eqpat
-% 			if type is alpha, then same hole. so holds by eqpat
-% 		\item Case: \(v_1\) is a variable \(x\), and \(v_2\) is non-variable value \(v\) (that may contain variables inside).
-% 			den(v_1) = den(v_2)
-% 			shell(den(v_1)(delta1)) = shell(den(v_2)(delta(2))) and holes(den(v_1)) = holes(den(v_2)) % can take shell/holes of values
-% 			within d1, shell of 
-
-% 			den(x) = den(v)
-% 			shell(den(x)(d1)) = shell(den(v)(d1))
-% 			envshell(d1) = ...,x->shell(x),... = ...,x->shell(v),... = envshell(d2) by eqpat
-% 			(this doesn't quite work, because v might contain variables)
-
-% 			cases on value constructors for v2
-% 			- sole. then shell is sole.
-% 			- left _. then shell is left _. IH?
-% 			so den(x) = left r = den(v). for some concrete r
-% 			so envshell(d1) = ...,x->left r,... = envshell(d2)
-
-% 			d1 = ..., x->left r, ...
-% 			d2 = ..., x->left r', ...
-
-% 			by IH, r eqpat r'?
-
-% 			I think I need some lemma about comparing variables to non-variable values, cause I need induction over shell structure somehow
-
-% 			lemma.  if x is a variable, v is a non-variable value, den(x)(delta1) = den(v)(delta1) = c
-% 			so delta1 = ...,x -> c,...
-% 			have delta1 eqpat delta2 so
-% 			delta2 = ...,x -> c', ... where shell(c) = shell(c') and holes(c) = holes(c')
-
-% 			lemma. if den(x)(delta1) = den(v)(delta1) = c,
-
-% 			den(x)(delta1) = den(v)(delta2) = left w.
-% 			shell(x(delta1)) = left w = shell(v(delta1))
-% 			holes(x(delta1)) = holes(w) = holes(v(delta1))
-% 			delta1 eqpat delta2.
-% 			shell(x(delta2)) = shell(left w) = shell(v(delta2))
-% 			holes(x(delta2)) = holes(w') = holes(w(delta2)) by lemma below
-% 			shell and holes under delta2 are equal, so x and w must be equal under delta2
-
-% 			need lemma if v_1(delta1) = holes v_2(delta1) and delta1 eqpat delta2 then holes(v_1(delta_2)) = holes(v_2)(delta2)
-% 			and condition shell(v1) = shell(v2)
-% 			let h_1, ..., h_n be holes under delta1, k_1, ..., k_n be holes under delta2 for v_1. ' for v_2.
-% 			holes must occur under variables, so they must occur in the value environment
-% 			any hole of v_1/v_2 must correspond to specific index i in delta
-% 			same i for v_1 and v_2, so same hole, so must be same
-
-% 			difficulty is stemming from don't have a way to talk about which holes come from which variables?
-% 			I think if you know that v_1 is a variable, this isn't an issue
-% 			I think this doesn't need to be sublemma
-
-% 			case v_1 = x, v_2 = w
-% 			then shell(x(d1)) = shell(w(d1))
-% 			and holes(x(d1)) = holes(w(d1))
-% 			know shell(x(d2)) = shell(w(d1)) = shell(w(d2)) by definition of eqpat
-% 			know holes(x(d2)) = holes(w(d2))
-% 			let h, k be holes at indices i,j in holes(x(d2)), holes(w(d2)).
-% 			although w is not a variable, we can figure out which variables the holes come from.
-% 			this we can find the indices i', j' of h, k in envholes(d1).
-% 			by definition of eqpat, h = k under d, so h = k under d2.
-% 			so holes(x(d2)) = holes(w(d2))
-% 			so x(d2) = w(d2)
-% 	\end{itemize}
-% \end{proof}
-
+	Now assume \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\)
+	Suppose towards a contradiction \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
+	We have just shown that if we assume this is true, we then have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\).
+	But this contradicts our assumption.
+	Thus we must have \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
+\end{proof}
 
 \begin{definition}
 	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type \(\tau\), denoted \(\#_\alpha \tau\), as follows:
@@ -587,10 +495,10 @@ More specifically, this is the maximum number of \(\alpha\)-typed sub-values tha
 This generalizes cleanly to type environments:
 
 \begin{definition}
-	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\vec\tau\), denoted \(\#_\alpha \vec\tau\), as follows:
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\Delta\), denoted \(\#_\alpha \Delta\), as follows:
 	\begin{itemize}
 		\item \(\#_\alpha \emptyset = 0\)
-		\item \(\#_\alpha \tau, \vec\tau = \#_\alpha \tau + \#_\alpha \vec\tau\)
+		\item \(\#_\alpha \tau, \Delta = \#_\alpha \tau + \#_\alpha \Delta\)
 	\end{itemize}
 \end{definition}
 

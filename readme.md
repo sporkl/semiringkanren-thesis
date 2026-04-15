@@ -3,16 +3,97 @@ outline:
 - abstract
 - introduction
 - prior work
+    - minikanren
+        - including tabling (vaguely bottom-up)
+    - datalog
+    - pixel arrays
+    - weighted logic langs
+        - slpKanren
+        - emKanren (weighted model counting)
+        - probKanren
+        - provenance semirings (datalog)
+        - probabilistic logic langs
+    - compiling to SAT
+        - kodkod
+    - monomorphizing bottom-up logic langs
+        - flix
+        - functional IncA
+    - testing polymorphic properties
+    - mercury/aditi (exact implementation unclear)
 - minimal semiringKanren; no polymorphism, no recursive types, compute as tensors
+    - introduction and examples (basically stolen from existing paper)
+        - coin flip
+        - weighted coin flip
+        - probability of landing on an odd coin flip
+        - semirings and transitive closure
+        - sudoku
+    - syntax and typing
+    - denotational semantics
 - bitstring representation semiringKanren
-    - how compilation works
+    - general bitstring representation of types
+    - enforcing variable types
+        - naive disjunction of valid values, inserted where new vars are
+    - coercing types
+        - coerced_eqo
+            - extracting bools and making them equal
+            - use compile_nonvar_adv, so straightforward
+            - don't worry about unused ones; they're ruled out by valid value enforcement
+        - gen_compile_adv
+            - need to generate code which does the compilation stuff at runtime to handle variables properly (make this clear)
+                - tricky case is variable which is a sum type.
+    - unrolling with gas
+        - needed in practice
+        - implementation with gas
+        - pretty simple
     - sat solver
-    - quantum? at least plug into Grover's algorithm?
+        - direct translation
+        - bool vars become satvars satisfying == and =/= as expected
+        - finding multiple solutions by preventing existing ones
+        - msat and tseitin
 - polymorphic semiringKanren
-    - type system
+    - introduce by examples
+        - sum-swap
+        - option-map
+        - has-disequality/type size counting
+    - syntax and type system
     - monomorphizing semantics
-    - non-monomorphizing semantics with idempotent semirings (x + y = x or y)
-    - non-monomorphizing semantics with polynomials over rings?
-- simple optimizations?
-- applications/benchmarks?
-- conclusion
+    - non-monomorphizing semantics examples/intuition (similar to presentation)
+        - "equality patterns"
+        - sum-swap denotation
+        - "shells" and "holes"
+        - example of calling sum-swap
+        - count type variable occurences to find viable size, and why it works
+        - has-disequality breaks, so need to monomorphize smaller relations
+        - semiring addition needs to be idempotent to handle fresh, intuitively
+    - compiling to non-monomorphizing semantics
+        - unify_or_extract pattern var checks shells
+        - enforce_equality_pattern for holes
+    - proofs
+        - formal definition of shells and holes
+        - lemma: values and shells with holes are bijection
+        - formal definition of equality patterns
+        - lemma: eqpat is equivalence relation
+        - lemma: "eqpat substitution"
+        - define type variable counting
+        - lemma: if sizes are big enough, then extension of environment on one side is eqpat to some extension of env on other side
+        - theorem: if denotation under env1 is w, and env1 eqpat env2, and sizes are big enough, then denotate under env2 is w
+        - theorem: implementation as-is preserves weight (maybe just show for simple case)
+- benchmarks?
+- conclusion and future work
+    - conclusion
+        - first bottom-up kanren dialect
+        - compiling to SAT offers improvements over SOTA, for some cases
+        - first bottom-up non-monomorphizing polymorphic logic lang
+            - "kanren" syntax makes compiling polymorphism easier
+    - future work
+        - recursive types
+        - higher-order relations
+        - drawing from datalog, fixpoint convergence under different semirings
+        - use SMT solver for other semirings
+        - applications
+        - other evaluation strategies
+            - quantum
+                - easy to use Grover's algorithm now that have SAT implementation
+            - sparse arrays
+                - generated arrays are very structured, so intuitively should be exploitable
+                - reference the good ICFP paper about sparse arrays? Compressed and Parallelized Structured Tensor Algebra

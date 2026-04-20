@@ -504,31 +504,28 @@ More specifically, this is the maximum number of \(\alpha\)-typed holes that can
 	\end{itemize}
 \end{definition}
 
-We can count the number of occurrences of \(\alpha\) within fresh variables of a goal.
-
 \begin{definition}
-	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in fresh variables of goal \(g\)},denoted \(\#_\alpha g\), inductively:
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in goal \(g\) under type environment \(\Delta\)}, denoted \(\#_\alpha g(\Delta)\), inductively:
 	\begin{itemize}
-		\item \(\#_\alpha \texttt{(conj \(g_1\) \(g_2\))} = \max(\#_\alpha g_1, \#_\alpha g_2)\)
-		\item \(\#_\alpha \texttt{(disj \(g_1\) \(g_2\))} = \max(\#_\alpha g_1, \#_\alpha g_2)\)
-		\item \(\#_\alpha \texttt{(fresh ((\(x : \tau\))) \(g\))} = \#_\alpha \tau + \#_\alpha g\)
-		\item \(\#_\alpha \texttt{(== \(v_1\) \(v_2\))} = 0\)
-		\item \(\#_\alpha \texttt{(=/= \(v_1\) \(v_2\))} = 0\)
-		\item \(\#_\alpha \texttt{(\(R\) \(\vec v\))} = 0\)
-		\item \(\#_\alpha \texttt{(factor \(r\))} = 0\)
+		\item \(\#_\alpha \texttt{(conj \(g_1\) \(g_2\))}(\Delta) = \max(\#_\alpha g_1, \#_\alpha g_2)\)
+		\item \(\#_\alpha \texttt{(disj \(g_1\) \(g_2\))}(\Delta) = \max(\#_\alpha g_1, \#_\alpha g_2)\)
+		\item \(\#_\alpha \texttt{(fresh ((\(x : \tau\))) \(g\))}(\Delta) = \#_\alpha g(\delta,x:\tau)\)
+		\item \(\#_\alpha \texttt{(== \(v_1\) \(v_2\))}(\Delta) = \#_\alpha \Delta\)
+		\item \(\#_\alpha \texttt{(=/= \(v_1\) \(v_2\))}(\Delta) = \#_\alpha \Delta\)
+		\item \(\#_\alpha \texttt{(\(R\) \(\vec v\))}(\Delta) = \#_\alpha \Delta\)
+		\item \(\#_\alpha \texttt{(factor \(r\))}(\Delta) = \#_\alpha \Delta\)
 	\end{itemize}
 \end{definition}
 
-To determine the maximum number of occurrences of a type variable that can occur in a relation, we count the number in the arguments, and add it to the count from goals:
+Which makes it easy to count for relations:
 
 \begin{definition}
-	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in relation \(R\)}, denoted \(\#_\alpha R\), as the sum of the (maximum) of occurrences of \(\alpha\) in the arguments of \(R\) with the (maximum) number of occurrences of \(\alpha\) in the goals of \(R\).
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in relation \(R\)}, denoted \(\#_\alpha R\),
+	as the (maximum) of occurrences of \(\alpha\) in the top-level goal, with the type environment determined from the arguments.
 	\begin{align*}
-		\#_\alpha \texttt{(defrel (\(R\) \(\forall \alpha \dots\) (\(x_1:\tau_1\)) \dots (\(x_n : \tau_1\))) \(g\))} = \#_\alpha \tau_1 + \dots + \#_\alpha \tau_n + \#_\alpha g
+		\#_\alpha \texttt{(defrel (\(R\) \(\forall \alpha \dots\) (\(x_1:\tau_1\)) \dots (\(x_n : \tau_1\))) \(g\))} = \#_\alpha g(x_1:\tau_1,\dots,x_n:\tau_n)
 	\end{align*}
 \end{definition}
-
-Intuitively, this is maximum number of occurrences of \(\alpha\) in some value environment while \(R\) is being evaluated.
 
 \begin{definition}
 	We define the \emph{size of type \(\tau\)}, notated \(|\tau|\), to be the number of values of type \(\tau\).
@@ -558,5 +555,16 @@ Intuitively, this is maximum number of occurrences of \(\alpha\) in some value e
 	Note that it is always possible to find such a value: \(|\sigma_2(\alpha)| \ge \#_\alpha \Delta,\tau\),
 	so \(\sigma_2(\alpha)\) has at least as many distinct values as there are \(\alpha\)-typed holes.
 \end{proof}
+
+\begin{theorem}
+	Let \(g\) be a goal, \(\eta\) be a relation environment, and \(\delta_1, \delta_2\) be value environments with corresponding type environment \(\Delta\).
+	If \(\delta_1 \eqpatD \delta_2\),
+	\(|\sigma_1(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\),
+	\(|\sigma_2(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\),
+	and \(+\) is idempotent (\(a + a = a\)), then
+	\(\den{g}(\eta, \delta_1) = \den{g}(\eta, \delta_2)\).
+\end{theorem}
+
+
 
 \end{document}

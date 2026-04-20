@@ -298,6 +298,8 @@ We assume that all needed monomorphic instances of each relation are included in
 
 \section{Non-monomorphizing semantics}
 
+% TODO: add denotational semantics for types with some substitution
+
 \section{Non-monomorphizing semantics correctness}
 
 \begin{definition}
@@ -461,12 +463,12 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	Choose \(\alpha \in \tau\).
 	We also may deduce by lemma \ref{lem:values-shells-holes} that \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\).
 	We know \(v_1\) and \(v_2\) have the same shells under \(\delta_1\),
-	so we can choose holes \(h_1 \in \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))\) at index \(i\), and \(k_1 \in \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\) both at index \(j\) where \(i = j\).
+	so we can choose holes \(h_1 \in \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))\) at index \(i\), and \(k_1 \in \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\) at index \(j\) where \(i = j\).
 	So holes \(h\) and \(k\) are at the same index \(i = j\) within their respective value shells.
 	Because of this, and because \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\), we know \(h_1 = k_1\).
 	We can determine the indices \(i_\delta, j_\delta\) of \(h_1, k_1\) in \(\delta_1\) by considering the positions of variables within \(v_1\) and \(v_2\), and counting accordingly.
 	\(\delta_1 \eqpatD \delta_2\), thus \(h_2 = k_2\) for holes \(h_2, k_2\) at indices \(i_\delta, j_\delta\) in \(\delta_2\).
-	Because we know \(\envshell_\Delta(\delta_1) = \envshell_{\Delta}(\delta_2)\), we know holes \(h_2, k_2\) are at indices \(i = j\) within the value shells of \(v_1, v_2\).
+	Because we know \(\envshell_\Delta(\delta_1) = \envshell_{\Delta}(\delta_2)\), we know holes \(h_2, k_2\) are at the same indices \(i = j\) within the value shells of \(v_1, v_2\).
 	\(h_2 = k_2\) holds for any chosen indices \(i = j\) and type variable \(\alpha\),
 	hence \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
 
@@ -478,7 +480,7 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	Suppose towards a contradiction \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
 	We have just shown that if we assume this is true, we then have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\).
 	But this contradicts our assumption.
-	Thus we must have \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
+	So we must have \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
 \end{proof}
 
 \begin{definition}
@@ -491,17 +493,52 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	\end{itemize}
 \end{definition}
 
-More specifically, this is the maximum number of \(\alpha\)-typed sub-values that can occur in a value of type \(\tau\).
-This generalizes cleanly to type environments:
+More specifically, this is the maximum number of \(\alpha\)-typed holes that can occur in a value of type \(\tau\).
+% This generalizes cleanly to type environments:
+
+% \begin{definition}
+% 	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\Delta\), denoted \(\#_\alpha \Delta\), as follows:
+% 	\begin{itemize}
+% 		\item \(\#_\alpha \emptyset = 0\)
+% 		\item \(\#_\alpha \tau, \Delta = \#_\alpha \tau + \#_\alpha \Delta\)
+% 	\end{itemize}
+% \end{definition}
+
+We can count the number of occurrences of \(\alpha\) within fresh variables of a goal.
 
 \begin{definition}
-	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\Delta\), denoted \(\#_\alpha \Delta\), as follows:
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in fresh variables of goal \(g\)},denoted \(\#_\alpha g\), inductively:
 	\begin{itemize}
-		\item \(\#_\alpha \emptyset = 0\)
-		\item \(\#_\alpha \tau, \Delta = \#_\alpha \tau + \#_\alpha \Delta\)
+		\item \(\#_\alpha \texttt{(conj \(g_1\) \(g_2\))} = \max(\#_\alpha g_1, \#_\alpha g_2)\)
+		\item \(\#_\alpha \texttt{(disj \(g_1\) \(g_2\))} = \max(\#_\alpha g_1, \#_\alpha g_2)\)
+		\item \(\#_\alpha \texttt{(fresh ((\(x : \tau\))) \(g\))} = \#_\alpha \tau + \#_\alpha g\)
+		\item \(\#_\alpha \texttt{(== \(v_1\) \(v_2\))} = 0\)
+		\item \(\#_\alpha \texttt{(=/= \(v_1\) \(v_2\))} = 0\)
+		\item \(\#_\alpha \texttt{(\(R\) \(\vec v\))} = 0\)
+		\item \(\#_\alpha \texttt{(factor \(r\))} = 0\)
 	\end{itemize}
 \end{definition}
 
+To determine the maximum number of occurrences of a type variable that can occur in a relation, we count the number in the arguments, and add it to the count from goals:
+
+\begin{definition}
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in relation \(R\)}, denoted \(\#_\alpha R\), as the sum of the (maximum) of occurrences of \(\alpha\) in the arguments of \(R\) with the (maximum) number of occurrences of \(\alpha\) in the goals of \(R\).
+	\begin{align*}
+		\#_\alpha \texttt{(defrel (\(R\) \(\forall \alpha \dots\) (\(x_1:\tau_1\)) \dots (\(x_n : \tau_1\))) \(g\))} = \#_\alpha \tau_1 + \dots + \#_\alpha \tau_n + \#_\alpha g
+	\end{align*}
+\end{definition}
+
+Intuitively, this is maximum number of occurrences of \(\alpha\) in some value environment while \(R\) is being evaluated.
+
+\begin{definition}
+	We define the \emph{size of type \(\tau\)}, notated \(|\tau|\), to be the number of values of type \(\tau\).
+	\(\tau\) is undefined when \(\tau\) contains a type variable.
+	\begin{align*}
+		|\tau| = | \den{\tau} |
+	\end{align*}
+\end{definition}
+
+% TODO: should probably go back and if say \delta_1 : \Delta, change to \delta_1 : \sigma_1(\Delta)
+
 
 \end{document}
-

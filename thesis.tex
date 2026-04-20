@@ -496,13 +496,13 @@ The third condition boils down to "if pairs of holes are equal for one value env
 More specifically, this is the maximum number of \(\alpha\)-typed holes that can occur in a value of type \(\tau\).
 % This generalizes cleanly to type environments:
 
-% \begin{definition}
-% 	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\Delta\), denoted \(\#_\alpha \Delta\), as follows:
-% 	\begin{itemize}
-% 		\item \(\#_\alpha \emptyset = 0\)
-% 		\item \(\#_\alpha \tau, \Delta = \#_\alpha \tau + \#_\alpha \Delta\)
-% 	\end{itemize}
-% \end{definition}
+\begin{definition}
+	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\Delta\), denoted \(\#_\alpha \Delta\), as follows:
+	\begin{itemize}
+		\item \(\#_\alpha \emptyset = 0\)
+		\item \(\#_\alpha \tau, \Delta = \#_\alpha \tau + \#_\alpha \Delta\)
+	\end{itemize}
+\end{definition}
 
 We can count the number of occurrences of \(\alpha\) within fresh variables of a goal.
 
@@ -540,5 +540,23 @@ Intuitively, this is maximum number of occurrences of \(\alpha\) in some value e
 
 % TODO: should probably go back and if say \delta_1 : \Delta, change to \delta_1 : \sigma_1(\Delta)
 
+\begin{lemma}
+	Let \(\Delta \vdash v_1 : \sigma_1(\tau)\).
+	If \(|\sigma_2(\alpha)| \ge \#_\alpha \Delta, \tau \; \forall \alpha \in \Delta\),
+	and \(\delta_1 \eqpatD \delta_2\),
+	then there exists \(\Delta \vdash v_2 : \sigma_2(\tau)\) such that \(\delta_1, x \mapsto v_1 \eqpat_{\Delta, \tau} \delta_2, x \mapsto v_2\).
+\end{lemma}
+\begin{proof}
+	For the equality pattern to continue to hold, we must have \(\shell(v_1) = \shell(v_2)\).
+	It remains to find appropriate values for the holes of \(v_2\).
+
+	Choose \(\alpha \in \tau\), and let \(i\) be the smallest index such that \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\) does not yet have an assigned value.
+	For \(\delta_1\), try to find index \(j < i\) such that \(\envholes_{\alpha \in \Delta, \tau}(\delta_1)[i] = \envholes_{\alpha \in \Delta, \tau}(\delta_1)[j]\).
+	If such \(j\) exists, assign the value of \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[j]\) to \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\).
+	If such \(j\) does not exist, choose an \(\sigma_2(\tau)\)-typed value which does not yet occur in \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)\),
+	and assign it to \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\).
+	Note that it is always possible to find such a value: \(|\sigma_2(\alpha)| \ge \#_\alpha \Delta,\tau\),
+	so \(\sigma_2(\alpha)\) has at least as many distinct values as there are \(\alpha\)-typed holes.
+\end{proof}
 
 \end{document}

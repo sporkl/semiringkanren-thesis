@@ -298,8 +298,6 @@ We assume that all needed monomorphic instances of each relation are included in
 
 \section{Non-monomorphizing semantics}
 
-% TODO: add denotational semantics for types with some substitution
-
 \section{Non-monomorphizing semantics correctness}
 
 \begin{definition}
@@ -444,10 +442,11 @@ The third condition boils down to "if pairs of holes are equal for one value env
 \end{proof}
 
 \begin{lemma}
+	\label{lem:eqpat-substitution}
 	Let \(\delta_1, \delta_2\) be value environments both with corresponding type environment \(\Delta\), where \(\delta_1 \eqpatD \delta_2\).
 	Additionally, let \(v_1, v_2 : \tau\) be values.
-	\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2))\), and
-	\(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2))\).
+	\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\), and
+	\(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
 \end{lemma}
 \begin{proof}
 	Note that we only need to prove one direction for each "iff"; the other direction holds by symmetry.
@@ -538,6 +537,7 @@ Which makes it easy to count for relations:
 % TODO: should probably go back and if say \delta_1 : \Delta, change to \delta_1 : \sigma_1(\Delta)
 
 \begin{lemma}
+	\label{lem:eqpat-extend}
 	Let \(\Delta \vdash v_1 : \sigma_1(\tau)\).
 	If \(|\sigma_2(\alpha)| \ge \#_\alpha \Delta, \tau \; \forall \alpha \in \Delta\),
 	and \(\delta_1 \eqpatD \delta_2\),
@@ -564,7 +564,49 @@ Which makes it easy to count for relations:
 	and \(+\) is idempotent (\(a + a = a\)), then
 	\(\den{g}(\eta, \delta_1) = \den{g}(\eta, \delta_2)\).
 \end{theorem}
-
-
+\begin{proof}
+	Proof by induction on the goal structure of \(g\).
+	\begin{itemize}
+		\item \(g = \texttt{(conj \(g_1\) \(g_2\))}\).
+			By the inductive hypothesis, \(\den{g_1}(\eta; \delta_1) = \den{g_1}(\eta; \delta_2)\) and \(\den{g_2}(\eta, \delta_2) = \den{g_2}(\eta; \delta_2)\)
+			Thus \(\den{g_1}(\eta; \delta_1) * \den{g_2}(\eta; \delta_1) = \den{g_1}(\eta; \delta_2) * \den{g_2}(\eta; \delta_2)\), and so \(\den{g}(\eta, \delta_1) = \den{g}(\eta, \delta_2)\).
+		\item \(g = \texttt{(disj \(g_1\) \(g_2\))}\).
+			By the inductive hypothesis, \(\den{g_1}(\eta; \delta_1) = \den{g_1}(\eta; \delta_2)\) and \(\den{g_2}(\eta, \delta_2) = \den{g_2}(\eta; \delta_2)\)
+			Thus \(\den{g_1}(\eta; \delta_1) + \den{g_2}(\eta; \delta_1) = \den{g_1}(\eta; \delta_2) + \den{g_2}(\eta; \delta_2)\), and so \(\den{g}(\eta, \delta_1) = \den{g}(\eta, \delta_2)\).
+		\item \(g = \texttt{(fresh ((\(x : \tau\))) \(g'\))}\).
+			\(|\sigma_1(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\), so \(|\sigma_1(\alpha)| \ge \#_\alpha g'(\Delta,\tau) \; \forall \alpha \in \Delta\).
+			By lemma \ref{lem:eqpat-extend}, for any \(\Delta \vdash v_1 : \sigma_1(\tau)\),
+			there exists \(\Delta \vdash v_2 : \sigma_2(\tau)\) where \(\delta_1, x \mapsto v_1 \eqpat_{\Delta, \tau} \delta_2, x \mapsto v_2\).
+			Similarly, \(|\sigma_2(\alpha)| \ge \#_\alpha g'(\Delta,\tau) \; \forall \alpha \in \Delta\), so for any \(\Delta \vdash v_2 : \sigma_2(\tau)\),
+			there exists \(\Delta \vdash v_1 : \sigma_1(\tau)\) where \(\delta_1, x \mapsto v_1 \eqpat_{\Delta, \tau} \delta_2, x \mapsto v_2\).
+			Thus \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\eta, \delta_1) = w_1 + \dots + w_n\),
+			and \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\eta, \delta_2) = w'_1 + \dots + w'_m\),
+			where each weight \(w_1, \dots, w_n\) appears at least once in \(w'_1, \dots, w'_m\),
+			and each weight \(w'_1, \dots, w'_m\) appears at least once in \(w_1, \dots, w_n\).
+			Let \(r_1, \dots, r_k\) be the unique weights appearing in both sums.
+			We require the semiring to be commutative, so we can group identical weights together.
+			We therefore have: \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\eta, \delta_1) = (r_1 + \dots) + \dots + (r_k + \dots)\),
+			and \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\eta, \delta_2) = (r_1 + \dots\dots) + \dots + (r_k + \dots\dots)\).
+			We require \(+\) to be idempotent.
+			Thus: \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\eta, \delta_1 = r_1 + \dots + r_k + \den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\eta, \delta_2)\)
+		\item \(g = \texttt{(== \(v_1\) \(v_2\))}\).
+			By lemma \ref{lem:eqpat-substitution}, we either have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\),
+			or \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
+			In the first case, \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\eta, \delta_1) = 1\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\eta, \delta_2) = 1\).
+			In the second case, \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\eta, \delta_1) = 0\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\eta, \delta_2) = 0\).
+			In either case, \(\den{g}(\eta, \delta_1) = \den{g}(\eta, \delta_2)\).
+		\item \(g = \texttt{(=/= \(v_1\) \(v_2\))}\).
+			By lemma \ref{lem:eqpat-substitution}, we either have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\),
+			or \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
+			In the first case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\eta, \delta_1) = 0\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\eta, \delta_2) = 0\).
+			In the second case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\eta, \delta_1) = 1\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\eta, \delta_2) = 1\).
+			In either case, \(\den{g}(\eta, \delta_1) = \den{g}(\eta, \delta_2)\).
+		\item \(g = \texttt{(\(R\) \(v\) \(\dots\))}\).
+			% TODO: clarify this case
+			We assume relation calls work as expected.
+		\item \(g = \texttt{(factor \(k\))}\).
+			\(\den{\texttt{(factor \(k\))}}(\eta, \delta_1) = k = \den{\texttt{(factor \(k\))}}(\eta, \delta_2)\)
+	\end{itemize}
+\end{proof}
 
 \end{document}

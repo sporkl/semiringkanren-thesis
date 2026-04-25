@@ -30,6 +30,7 @@
 \newcommand{\eqpatD}{\eqpat_{\Delta}}
 
 \DeclareMathOperator{\enforceeqpatD}{enforce_{\eqpatD}}
+\DeclareMathOperator{\compile}{compile}
 
 \begin{document}
 
@@ -547,8 +548,6 @@ Which makes it easy to count for relations:
 	\end{align*}
 \end{definition}
 
-% TODO: should probably go back and if say \delta_1 : \Delta, change to \delta_1 : \sigma_1(\Delta)
-
 \begin{lemma}
 	\label{lem:eqpat-extend}
 	Let \(\Delta \vdash v_1 : \sigma_1(\tau)\).
@@ -569,9 +568,19 @@ Which makes it easy to count for relations:
 	so \(\sigma_2(\alpha)\) has at least as many distinct values as there are \(\alpha\)-typed holes.
 \end{proof}
 
+\begin{definition}
+	Given the context \(\gamma : \Gamma\) and some substitution \(\sigma\), we say a monomorphic instance \(R_{\sigma_1}\) of relation \(R\) is \emph{large-enough} if
+	for all \(\Delta \vdash \vec v : \vec \tau\) satisfying \(\Gamma;\Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\),
+	and for all monomorphic instances \(R_{\sigma_2}\) of \(R\) with \(\sigma_2(\alpha) \ge \sigma_1(\alpha) \; \forall \alpha \in \vec \tau\),
+	and for all \(\delta_1 : \sigma_1(\Delta)\), \(\delta_2 : \sigma_2(\Delta)\) with \(\delta_1 \eqpatD \delta_2\),
+	the following holds:
+	\[\den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma) = \den{\texttt{(\(R_{\sigma_2}\) \(\vec v\))}}(\gamma;\delta_2;\sigma)\]
+\end{definition}
+
 \begin{theorem}
+	\label{thm:eqpat_weight}
 	Let \(\Gamma; \Delta \vdash g \wt\), \(\delta_1 : \sigma_1(\Delta)\), \(\delta_2 : \sigma_2(\Delta)\),
-	and \(\gamma : \Gamma\) satisfy for all valid \(\texttt{(\(R\) \(\vec v\))}\): \(\gamma(R)(\den{\vec v}(\delta_1)) = \gamma(R)(\den{\vec v}(\delta_2))\).
+	and all relations in \(\gamma : \Gamma\) be large-enough.
 	If \(\delta_1 \eqpatD \delta_2\),
 	\(|\sigma_1(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\),
 	\(|\sigma_2(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\),
@@ -618,24 +627,24 @@ Which makes it easy to count for relations:
 			In the second case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\).
 			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(\(R\) \(\vec v\))}\).
-			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R)(\den{\vec v}(\delta_1))\)
-			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R)(\den{\vec v}(\delta_2))\)
-			By hypothesis, these are equivalent.
+			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R_{\sigma'})(\den{\vec v}(\delta_1))\)
+			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R_{\sigma''})(\den{\vec v}(\delta_2))\)
+			By the hypothesis that all relations in \(\gamma\) are large-enough, these are equivalent.
 		\item \(g = \texttt{(factor \(k\))}\).
 			\(\den{\texttt{(factor \(k\))}}(\gamma; \delta_1; \sigma_1) = k = \den{\texttt{(factor \(k\))}}(\gamma; \delta_2; \sigma_2)\)
 	\end{itemize}
 \end{proof}
 
-The condition on \(\gamma\) is quite restrictive.
+The large-enough condition on \(\gamma\) is quite restrictive.
 For example, given \(\Delta \vdash x : \alpha\) with \(\sigma_1(\alpha) = 1\) and \(\sigma_2(\alpha) = 2\),
 then \(\gamma\) is not allowed to hold relations like \(\texttt{two-valued}\).
 Here, \(\texttt{(two-valued \(x\))}\) would fail under \(\delta_1\) but succeed under \(\delta_2\).
 Ideally, we should use something smarter than \(\#_\alpha g(\Delta)\), so that the type variable sizes account for these sorts of relation calls.
 A smarter variant may have relation calls push size requirements upward to their arguments, with a fixpoint process to allow for recursive calls.
 
-We now aim to compile relation calls with large-enough arguments to call the smallest compatible relation.
-While it remains necessary to keep monomorphized versions of relations with small-sized arguments,
-this allows us to remove monomorphized versions of the relations with large arguments.
+We now aim to compile monomorphized relation calls to instead call the just smallest large-enough relation.
+While it remains necessary to keep monomorphized relation instances for calls smaller than the smallest large-enough instance.
+this allows us to remove all monomorphized instances larger than the smallest large-enough instance.
 In practice, implementation of this compilation scheme is verbose, so we reason here with a simplified/idealized version of the code.
 Rather than a formal demonstration of correctness, the following proofs aim to sketch an intuitive idea of why this method works.
 
@@ -645,7 +654,6 @@ Let \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\), and \(\alp
 For convenience, assume \(\envshell\) and \(\envholes\) operate on type sub-environments like \(\Delta_1\), \(\Delta_2\)
 by extracting shells or all possible holes as values, written in terms of ancillary variables.
 In practice, this is handled manually.
-
 \begin{align*}
 	& \enforceeqpatD(\Delta_1; \Delta_2) = \\
 	& \quad \texttt{(fresh (\textrm{ancillary variables for \(\envshell\) and \(\envholes\)})} \\
@@ -673,12 +681,14 @@ Because we will still require \(+\) to be idempotent and commutative,
 the sum corresponding to the outer \(\texttt{fresh}\) for ancillary variables also does not change the overall weight when there are multiple such successes.
 Failures correspond to weight \(0\), which is the additive identity, so they also do not change the overall weight.
 So while we do have instances of the \(\texttt{disj}\) clause which operate on holes which do not "exist", they have no impact to the overall weight and can be ignored.
+
 Similarly, deconstructing \(\Delta_1\) and \(\Delta_2\) into ancillary variables always succeeds for at least one assignment in the top-level \(\texttt{fresh}\),
 so we can treat it as a success and assume the ancillary variables have the correct values.
 Also note that when taking the denotation of a goal returned by \(\enforceeqpatD\), applying \(\sigma\) within the top level fresh is equivalent to identity,
 because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
 
 \begin{lemma}
+	\label{lem:enforce_eqpat}
 	Let \(\delta_1 : \Delta_1 = \sigma_1(\Delta)\) and \(\delta_2 : \Delta_2 = \sigma_2(\Delta)\).
 	Then for any relation environment \(\gamma\) and type variable substitution \(\sigma\),
 	either: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\] and \(\delta_1 \eqpatD \delta_2\),
@@ -719,7 +729,57 @@ because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
 
 Note that \(\gamma\) and \(\sigma\) are never applied in the generated code, so they have no effect on the final weight.
 
+We can now compile relation calls.
+Within context \(\gamma : \Gamma\), suppose that we want to compile large-enough  \(\texttt{(\(R_{\sigma_1}\) \(\vec v\))}\). 
+Let \(R_{\sigma_2}\) be the smallest large-enough monomorphic instance of \(R\).
+When \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\),
+we use the notation \(\vec{v}[\Delta_1 \mapsto \Delta_2]\) for replacing variables from sub-environment \(\Delta_1\) with corresponding variables from sub-environment \(\Delta_2\).
+Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as follows:
+\begin{align*}
+	& \compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))}) = \\
+	& \quad \texttt{(fresh ((\(\delta_2 : \Delta_2 = \sigma_2(\Delta)\))) } \\
+	& \quad\quad \texttt{(conj} \\
+	& \quad\quad\quad \texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))} \\
+	& \quad\quad\quad \texttt{\(\enforceeqpatD(\Delta_1; \Delta_2)\)))} \\
+\end{align*}
 
-% TODO: define and prove correctness of compile function
+\begin{theorem}
+	Given any \(\gamma : \Gamma\) and \(\sigma\), large-enough \(R_{\sigma_1}\), \(\delta_1 : \Delta_1 =  \sigma_1(\Delta)\),
+	and \(\vec v\) satisfying \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), it follows:
+	\[ \den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma) = \den{\compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))})}(\gamma;\delta_1;\sigma) \]
+\end{theorem}
+\begin{proof}
+	Let \(w = \den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma)\) and aim to show :
+	\[
+		\den{\compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))})}(\gamma;\delta_1;\sigma) = w
+	\]
 
+	First consider subcases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) fails.
+	\(0\) is multiplicative annihilator, so these cases all result in weight \(0\).
+
+	Now consider subcases cases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds.
+	Within the \(\texttt{fresh}\), our environment is \(\delta_1, \delta_2 : \Delta_1, \Delta_2\).
+	Because we assume \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds, by lemma \ref{lem:enforce_eqpat} we know \(\delta_1 \eqpatD \delta_2\).
+	From this, along \(R_{\sigma_1}\) and \(R_{\sigma_2}\) being large-enough by assumption/definition,
+	we know: \[\den{\texttt{(\(R_{\sigma_1}\) \(\vec{v}\))}}(\gamma;\delta_1;\sigma) = \den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_2;\sigma) = w\]
+	\(\vec{v}[\Delta_1 \mapsto \Delta_2]\) does not include any variables that occur in \(\delta_1\),
+	so the \(R_{\sigma_2}\) relation call has the same weight under the larger environment \(\delta_1, \delta_2\):
+	\[
+		\den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_2;\sigma)
+		= \den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_1,\delta_2;\sigma)
+		= w
+	\]
+	As mentioned, we assume the \(\enforceeqpatD\) call succeeds.
+	Thus:
+	\[
+		\den{\texttt{(conj (\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\)) \(\enforceeqpatD(\Delta_1; \Delta_2)\))}}(\gamma;\delta_1,\delta_2,\sigma)
+		= w * 1 = w
+	\]
+
+	Our outer fresh is a sum of \(0\)s and \(w\)s. Because our semiring is associative, has idempotent \(+\), and additive identity \(0\), we have:
+	\[
+		\den{\texttt{(fresh ((\(\delta_2 : \Delta_2 = \sigma_2(\Delta)\))) \(\dots\))}}(\gamma;\delta_1;\sigma)
+		= (w + \dots) + (0 + \dots) = w + 0 = w
+	\]
+\end{proof}
 \end{document}

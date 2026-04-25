@@ -633,7 +633,13 @@ Here, \(\texttt{(two-valued \(x\))}\) would fail under \(\delta_1\) but succeed 
 Ideally, we should use something smarter than \(\#_\alpha g(\Delta)\), so that the type variable sizes account for these sorts of relation calls.
 A smarter variant may have relation calls push size requirements upward to their arguments, with a fixpoint process to allow for recursive calls.
 
-We now define a function to generate code to enforce equality patterns between two sub-environments.
+We now aim to compile relation calls with large-enough arguments to call the smallest compatible relation.
+While it remains necessary to keep monomorphized versions of relations with small-sized arguments,
+this allows us to remove monomorphized versions of the relations with large arguments.
+In practice, implementation of this compilation scheme is verbose, so we reason here with a simplified/idealized version of the code.
+Rather than a formal demonstration of correctness, the following proofs aim to sketch an intuitive idea of why this method works.
+
+We define a function to generate code to enforce equality patterns between two sub-environments.
 Because the generated code should work with potentially any value sub-environments, we define the function in terms of the type sub-environments.
 Let \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\), and \(\alpha, \dots \in \Delta\).
 For convenience, assume \(\envshell\) and \(\envholes\) operate on type sub-environments like \(\Delta_1\), \(\Delta_2\)
@@ -641,7 +647,7 @@ by extracting shells or all possible holes as values, written in terms of ancill
 In practice, this is handled manually.
 
 \begin{align*}
-	& \enforceeqpatD(\Delta_1, \Delta_2) = \\
+	& \enforceeqpatD(\Delta_1; \Delta_2) = \\
 	& \quad \texttt{(fresh (\textrm{ancillary variables for \(\envshell\) and \(\envholes\)})} \\
 	& \quad \quad \texttt{(conj }\\
 	& \quad \quad \quad \textrm{deconstruct \(\Delta_1\) and \(\Delta_2\) into the ancillary variables} \\
@@ -665,6 +671,55 @@ The \(\texttt{=/=}\) case may also succeed for some other value environment.
 In either case, this results in the weight \(1\) for the \(\texttt{disj}\) and therefore does not impact the weight of the outer \(\texttt{conj}\).
 Because we will still require \(+\) to be idempotent and commutative,
 the sum corresponding to the outer \(\texttt{fresh}\) for ancillary variables also does not change the overall weight when there are multiple such successes.
-So while we do operate on extra holes, they have no impact to the overall weight and can be ignored.
+Failures correspond to weight \(0\), which is the additive identity, so they also do not change the overall weight.
+So while we do have instances of the \(\texttt{disj}\) clause which operate on holes which do not "exist", they have no impact to the overall weight and can be ignored.
+Similarly, deconstructing \(\Delta_1\) and \(\Delta_2\) into ancillary variables always succeeds for at least one assignment in the top-level \(\texttt{fresh}\),
+so we can treat it as a success and assume the ancillary variables have the correct values.
+Also note that when taking the denotation of a goal returned by \(\enforceeqpatD\), applying \(\sigma\) within the top level fresh is equivalent to identity,
+because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
+
+\begin{lemma}
+	Let \(\delta_1 : \Delta_1 = \sigma_1(\Delta)\) and \(\delta_2 : \Delta_2 = \sigma_2(\Delta)\).
+	Then for any relation environment \(\gamma\) and type variable substitution \(\sigma\),
+	either: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\] and \(\delta_1 \eqpatD \delta_2\),
+	or \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 0\] and \(\delta_1 \not\eqpatD \delta_2\).
+\end{lemma}
+\begin{proof}
+	We either have \(\delta_1 \eqpatD \delta_2\), or \(\delta_1 \not\eqpatD \delta_2\).
+
+	First assume \(\delta_1 \eqpatD \delta_2\) and aim to show: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\]
+	\(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\),
+	so \(\texttt{(== \(\envshell_{\Delta}(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))}\) succeeds under \(\delta_1, \delta_2\).
+	Similarly, for any \(\alpha\), for any holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
+	and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_2\),
+	then either \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) or \(h_2 \ne k_2\).
+	Exactly one branch of the \(\texttt{disj}\) succeeds for each \(\alpha, i, j\) (and we can ignore holes which do not "exist" here), so all such \(\texttt{disj}\)s have weight 1.
+	We have also argued that deconstructing \(\Delta_1, \Delta_2\) into ancillary variables succeeds, and relatedly that we can ignore the outer \(\texttt{fresh}\).
+	Thus we have a conjunction of sub-goals of weight 1, which is the multiplicative identity, so the total weight is 1.
+
+	Now assume \(\delta_1 \not\eqpatD \delta_2\), and aim to show: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\]
+	We know \(\Delta_1 = \sigma_1(\Delta)\) and \(\Delta_2 = \sigma_2(\Delta)\).
+	\(\delta_1 \eqpatD \delta_2\), so either \(\envshell_\Delta(\delta_1) \ne \envshell_\Delta(\delta_2)\),
+	or for some \(\alpha\) and holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
+	and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_2)\),
+	we have \(h_1 = k_1\) and \(h_2 \ne k_2\), or \(h_1 \ne k_1\) and \(h_2 = k_2\).
+	
+	In the first case, \(\envshell_\Delta(\delta_1) \ne \envshell_\Delta(\delta_2)\).
+	Thus \(\texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_\Delta(\Delta_2)\))}\) fails under \(\delta_1, \delta_2\).
+	This corresponds to weight \(0\), which is a multiplicative annihilator.
+	Thus the outer \(\texttt{conj}\) has weight \(0\), and so the generated code has weight \(0\) under \(\delta_1, \delta_2\).
+
+	In the second case, we either have \(h_1 = k_1\) and \(h_2 \ne k_2\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\),
+	for holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\Delta_1)\) and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\Delta_2)\).
+	Thus, both subcases of the corresponding \(\texttt{disj}\) fail, and so the \(\texttt{disj}\) itself fails, returning weight \(0\).
+	As before, this forces the weight of the outer \(\texttt{conj}\), and so weight of the generated code as a whole, to be \(0\).
+
+	In either case, if \(\delta_1 \not\eqpatD \delta_2\), then \(\den{\enforceeqpatD(\Delta_1; \Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 0\).
+\end{proof}
+
+Note that \(\gamma\) and \(\sigma\) are never applied in the generated code, so they have no effect on the final weight.
+
+
+% TODO: define and prove correctness of compile function
 
 \end{document}

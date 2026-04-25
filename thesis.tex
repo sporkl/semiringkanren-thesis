@@ -45,28 +45,28 @@ We expand the syntax and typing of minimal semiringKanren to support polymorphic
 \begin{figure}
 \[
 \begin{array}{lrcl}
-	\text{Programs} & P & ::= & \mathit{Rel}\dots \\
-	\text{Relations} & Rel & ::= & \texttt{(defrel (\(R\) \(\forall \alpha \dots\) . (\(x:\tau\)) \(\dots\)) \(g\)) } \\
-	\text{Goals} & g & ::= & \texttt{(conj \(g\) \(g\))} \\
+	\textrm{Programs} & P & ::= & \mathit{Rel}\dots \\
+	\textrm{Relations} & Rel & ::= & \texttt{(defrel (\(R\) \(\forall \alpha \dots\) . (\(x:\tau\)) \(\dots\)) \(g\)) } \\
+	\textrm{Goals} & g & ::= & \texttt{(conj \(g\) \(g\))} \\
 	& & | & \texttt{(disj \(g\) \(g\))} \\
 	& & | & \texttt{(fresh ((\(x:\tau\)) \(\dots\)) \(g\))} \\
 	& & | & \texttt{(== \(v\) \(v\))} \\
 	& & | & \texttt{(=/= \(v\) \(v\))} \\
 	& & | & \texttt{(\(R\) \(v\) \(\dots\))} \\
 	& & | & \texttt{(factor \(k\))} \\
-	\text{Values} & v & ::= & \texttt{sole} \\
+	\textrm{Values} & v & ::= & \texttt{sole} \\
 	& & | & \texttt{(left\(_{\tau_1, \tau_2}\) \(v\))} \\
 	& & | & \texttt{(right\(_{\tau_1, \tau_2}\) \(v\))} \\
 	& & | & \texttt{(pair \(v\) \(v\))} \\
 	& & | & x \\
-	\text{Types} & \tau & ::= & \texttt{Unit} \\
+	\textrm{Types} & \tau & ::= & \texttt{Unit} \\
 	& & | & \texttt{(Sum \(\tau_1\) \(\tau_2\))} \\
 	& & | & \texttt{(Pair \(\tau_1\) \(\tau_2\))} \\
 	& & | & \alpha \\
-	\text{Relation names} & R & & \\
-	\text{Variables} & x,y,z & & \\
-	\text{Type variables} & \alpha,\beta & & \\
-	\text{Weights} & r & \in & \mathbb{K}
+	\textrm{Relation names} & R & & \\
+	\textrm{Variables} & x,y,z & & \\
+	\textrm{Type variables} & \alpha,\beta & & \\
+	\textrm{Weights} & r & \in & \mathbb{K}
 \end{array}
 \]
 \end{figure}
@@ -282,16 +282,16 @@ We assume that all needed monomorphic instances of each relation are included in
 	\den{\texttt{(fresh ((\(x : \tau\))) \(g\))}} (\gamma;\delta;\sigma) &= \sum_{v \in \den{\sigma(\tau)}} \den{g} (\gamma;\delta,x \mapsto v;\sigma) \\
 	\den{\texttt{(== \(v_1\) \(v_2\))}} (\gamma;\delta;\sigma) &=
 	\begin{cases}
-		1 & \text{if } \den{v_1} (\delta) = \den{v_2} (\delta) \\
-		0 & \text{if } \den{v_1} (\delta) \ne \den{v_2} (\delta)
+		1 & \textrm{if } \den{v_1} (\delta) = \den{v_2} (\delta) \\
+		0 & \textrm{if } \den{v_1} (\delta) \ne \den{v_2} (\delta)
 	\end{cases} \\
 	\den{\texttt{(=/= \(v_1\) \(v_2\))}} (\gamma;\delta;\sigma) &=
 	\begin{cases}
-		1 & \text{if } \den{v_1} (\delta) \ne \den{v_2} (\delta) \\
-		0 & \text{if } \den{v_1} (\delta) = \den{v_2} (\delta)
+		1 & \textrm{if } \den{v_1} (\delta) \ne \den{v_2} (\delta) \\
+		0 & \textrm{if } \den{v_1} (\delta) = \den{v_2} (\delta)
 	\end{cases} \\
 	\den{\texttt{(\(R\) \(\vec v\))}} (\gamma;\delta;\sigma) &= \gamma(R_{\sigma'})(\den{\vec v}(\delta))
-	\text{ where } \vec v : \sigma'(\vec\tau) \\
+	\textrm{ where } \vec v : \sigma'(\vec\tau) \\
 	\den{\texttt{(factor \(r\))}} (\gamma;\delta;\sigma) &= r
 \end{align*}
 \caption{Denotational semantics for goals.}
@@ -302,7 +302,7 @@ We assume that all needed monomorphic instances of each relation are included in
 	\den{\texttt{(defrel (\(R_{\sigma}\) \(\forall \vec \alpha\) . (\(\vec x : \sigma (\vec \tau)\)) g)}} (\gamma) =
 	(\vec i) \mapsto \den{g} (\gamma; \vec x \mapsto \den{\vec i};\sigma) \\
 	\den{\textit{Rel}_1, \dots, \textit{Rel}_Q} = \;
-	\mathrel{\text{fix}} \gamma \mathrel{\text{in}} \{R_1 \mapsto \den{\textit{Rel}_1} (\gamma), \dots, R_Q \mapsto \den{\textit{Rel}_Q} (\gamma) \}
+	\mathrel{\textrm{fix}} \gamma \mathrel{\textrm{in}} R_1 \mapsto \den{\textit{Rel}_1} (\gamma), \dots, R_Q \mapsto \den{\textit{Rel}_Q} (\gamma)
 \end{gather*}
 \caption{Denotational semantics for relations and programs.}
 \end{figure}
@@ -314,7 +314,7 @@ We assume that all needed monomorphic instances of each relation are included in
 \begin{definition}
 	We define a \emph{shell} using the following grammar:
 	\[ \begin{array}{lrcl}
-		\text{Shells} & s & ::= & \texttt{sole} \\
+		\textrm{Shells} & s & ::= & \texttt{sole} \\
 		& & | & \texttt{(left \(s\))} \\
 		& & | & \texttt{(right \(s\))} \\
 		& & | & \texttt{(pair \(s_1\) \(s_2\))} \\
@@ -351,7 +351,6 @@ We also have versions of these functions which apply to \emph{value environments
 	\envshell_{\emptyset}() &= \emptyset \\
 	\envshell_{\Delta, \tau}(\vec x \mapsto \vec v, x \mapsto v) &= \envshell_{\Delta}(\vec x \mapsto \vec v), x \mapsto \shell_{\tau}(v)
 \end{align*}
-
 \begin{align*}
 	\envholes_{\alpha \in \emptyset}() &= \emptyset \\
 	\envholes_{\Delta, \alpha \in \tau}(\vec x \mapsto \vec v, x \mapsto v) &= \envholes_{\alpha \in \Delta}(\vec v), \holes_{\alpha \in \tau}(v)
@@ -402,8 +401,8 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 			By the inductive hypothesis, we have \(v_1' = v_2'\) and \(v_1'' = v_2''\).
 			Thus, \(\texttt{(pair \(v_1'\) \(v_1''\))} = \texttt{(pair \(v_2'\) \(v_2''\))}\), and so \(v_1 = v_2\).
 		\item Case: \(\tau = \alpha\) (for any type variable).
-			Our hypothesis holds for all type variables, so we know \(\holes_{\alpha \in \alpha}(v_1) = v_1\) and \(\holes_{\alpha \in \alpha}(v_2) = v_2\).
-			By hypothesis, \(\holes_{\alpha \in \alpha}(v_1) = \holes_{\alpha \in \alpha}(v_2)\).
+			By definition we know \(\holes_{\alpha \in \alpha}(v_1) = v_1\) and \(\holes_{\alpha \in \alpha}(v_2) = v_2\).
+			Our hypothesis holds for all type variables, so \(\holes_{\alpha \in \alpha}(v_1) = \holes_{\alpha \in \alpha}(v_2)\).
 			Thus by transitivity of equality, \(v_1 = v_2\).
 	\end{itemize}
 	In any case, we have \(v_1 = v_2\).
@@ -459,41 +458,51 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	\label{lem:eqpat-substitution}
 	Let \(\delta_1, \delta_2\) be value environments where \(\delta_1 \eqpatD \delta_2\).
 	Additionally, let \(v_1, v_2 : \tau\) be values.
-	\(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\), and
-	\(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) iff \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
+	Then \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) if and only if \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
 \end{lemma}
 \begin{proof}
-	Note that we only need to prove one direction for each "iff"; the other direction holds by symmetry.
-	First assume \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and aim to prove \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2))\).
+	First assume \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and aim to prove \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
+	Note that the converse holds by symmetry, so we only need to prove one direction.
 
-	By lemma \ref{lem:values-shells-holes}, we know \(\shell_{\tau}(\den{v_1}(\delta_1)) = \shell_{\tau}(\den{v_2}(\delta_1))\)
-	and \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1)) \; \forall \alpha \in \tau\).
-	\(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\).
-	% do I need to explain this next sentence better?
+	We know \(\shell_{\tau}(\den{v_1}(\delta_1)) = \shell_{\tau}(\den{v_2}(\delta_1))\)
+	by applying the trivial part of lemma \ref{lem:values-shells-holes}.
+	By assumption, \(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\).
+	Because the envshells of \(\delta_1\) and \(\delta_2\) are equal, the shells of each variable in \(\delta_1\) and \(\delta_2\) are equal.
+	So for any valid variable \(x : \tau'\), \(\shell_{\tau'}(\den{x}(\delta_1)) = \shell_{\tau'}(\den{x}(\delta_2))\).
+	This cleanly extends to arbitrary values.
 	Thus \(\shell_\tau(\den{v_1}(\delta_1)) = \shell_\tau(\den{v_1}(\delta_2))\) and \(\shell_\tau(\den{v_2}(\delta_1)) = \shell_\tau(\den{v_2}(\delta_2))\).
 	By transitivity of equality, we therefore know \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\).
 
-	Choose \(\alpha \in \tau\).
-	We also may deduce by lemma \ref{lem:values-shells-holes} that \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\).
-	We know \(v_1\) and \(v_2\) have the same shells under \(\delta_1\),
-	so we can choose holes \(h_1 \in \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))\) at index \(i\), and \(k_1 \in \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\) at index \(j\) where \(i = j\).
-	So holes \(h\) and \(k\) are at the same index \(i = j\) within their respective value shells.
-	Because of this, and because \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_1)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))\), we know \(h_1 = k_1\).
-	We can determine the indices \(i_\delta, j_\delta\) of \(h_1, k_1\) in \(\delta_1\) by considering the positions of variables within \(v_1\) and \(v_2\), and counting accordingly.
-	\(\delta_1 \eqpatD \delta_2\), thus \(h_2 = k_2\) for holes \(h_2, k_2\) at indices \(i_\delta, j_\delta\) in \(\delta_2\).
-	Because we know \(\envshell_\Delta(\delta_1) = \envshell_{\Delta}(\delta_2)\), we know holes \(h_2, k_2\) are at the same indices \(i = j\) within the value shells of \(v_1, v_2\).
-	\(h_2 = k_2\) holds for any chosen indices \(i = j\) and type variable \(\alpha\),
-	hence \(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
+	For any \(\alpha \in \tau\) and valid index \(i\), we assert:
+	\[\holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i)\]
+	Because holes correspond to variable-typed values, and variable-typed values can only be constructed by by referencing variables in the environment,
+	we know the values of all holes under \(\delta_2\) must come from somewhere within \(\delta_2\).
+	Thus,
+	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \envholes_{\alpha \in \Delta}(\delta_2)(j_1) \]
+	\[ \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) = \envholes_{\alpha \in \Delta}(\delta_2)(j_2) \]
+	for some \(j_1, j_2\).
+	We can determine suitable \(j_1, j_2\) by figuring out which hole of which variable the left-hand side comes from,
+	and looking up the corresponding hole of the same variable on the right-hand side.
+	Because we have already shown that the shells are consistent across \(v_1, v_2\) and \(\delta_1, \delta_2\),
+	we can look up the values of the same holes under \(\delta_1\):
+	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))(i) = \envholes_{\alpha \in \Delta}(\delta_1)(j_1) \]
+	\[ \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))(i) = \envholes_{\alpha \in \Delta}(\delta_1)(j_2) \]
+	Because \(\den{v_1}(\delta_1) = \den{v_2}(\delta_2)\) by assumption, we therefore have:
+	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))(i) \]
+	and so:
+	\[ \envholes_{\alpha \in \Delta}(\delta_1)(j_1) = \envholes_{\alpha \in \Delta}(\delta_1)(j_2) \]
+	by transitivity of equality.
+	Because of this and \(\delta_1 \eqpatD \delta_2\), we therefore must also have:
+	\[ \envholes_{\alpha \in \Delta}(\delta_2)(j_1) = \envholes_{\alpha \in \Delta}(\delta_2)(j_2) \]
+	by definition of \(\eqpatD\).
+	Therefore by transitivity of equality:
+	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) \]
+	This holds for any \(\alpha \in \tau\) and any valid index \(i\), so we have:
+	\[ \holes_{\alpha \in \Delta}(\den{v_1}(\delta_2)) = \holes_{\alpha \in Delta}(\den{v_2}(\delta_2))\]
 
 	We have shown \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\) and
 	\(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
 	Thus by lemma \ref{lem:values-shells-holes}, \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
-
-	Now assume \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\)
-	Suppose towards a contradiction \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\).
-	We have just shown that if we assume this is true, we then have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\).
-	But this contradicts our assumption.
-	So we must have \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
 \end{proof}
 
 \begin{definition}
@@ -507,7 +516,7 @@ The third condition boils down to "if pairs of holes are equal for one value env
 \end{definition}
 
 More specifically, this is the maximum number of \(\alpha\)-typed holes that can occur in a value of type \(\tau\).
-% This generalizes cleanly to type environments:
+This generalizes cleanly to type environments:
 
 \begin{definition}
 	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\)} in type environment \(\Delta\), denoted \(\#_\alpha \Delta\), as follows:
@@ -660,7 +669,7 @@ In practice, this is handled manually.
 	& \quad \quad \texttt{(conj }\\
 	& \quad \quad \quad \textrm{deconstruct \(\Delta_1\) and \(\Delta_2\) into the ancillary variables} \\
 	& \quad \quad \quad \texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))} \\
-	& \quad \quad \quad \text{for \(i,j \in 1,\dots,\#_\alpha\Delta\)} \\
+	& \quad \quad \quad \textrm{for \(i,j \in 1,\dots,\#_\alpha\Delta\)} \\
 	& \quad \quad \quad \quad \texttt{(disj} \\
 	& \quad \quad \quad \quad \quad \texttt{(conj} \\
 	& \quad \quad \quad \quad \quad \quad \texttt{(== \(\envholes_{\alpha \in \Delta}(\Delta_1)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_1)(j)\))} \\

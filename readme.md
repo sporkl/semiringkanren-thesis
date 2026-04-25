@@ -86,6 +86,7 @@ outline:
         - first bottom-up non-monomorphizing polymorphic logic lang
             - "kanren" syntax makes compiling polymorphism easier
     - future work
+        - smarter type variable size counting
         - recursive types
         - higher-order relations
         - drawing from datalog, fixpoint convergence under different semirings

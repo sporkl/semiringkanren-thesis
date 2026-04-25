@@ -29,6 +29,8 @@
 \newcommand{\eqpat}{\leftrightharpoons}
 \newcommand{\eqpatD}{\eqpat_{\Delta}}
 
+\DeclareMathOperator{\enforceeqpatD}{enforce_{\eqpatD}}
+
 \begin{document}
 
 \maketitle
@@ -238,7 +240,7 @@ This generalizes to values which may only partially consist of an unknown type.
 But because the specifics of the types are unknown, we have no other operations.
 Thus, we can treat all unknown types of the same size equivalently.
 As such, for each relation \(R\) with type variables \(\alpha, \dots, \gamma\),
-we generate concrete instances of these relations \(R_{\sigma_1}, \dots, R_{\sigma_n}\), corresponding to all unique-up-to-size type variable substitutions \(\sigma_1, \dots, \sigma_n\).
+we generate concrete "monomorphic" instances of these relations \(R_{\sigma_1}, \dots, R_{\sigma_n}\), corresponding to all unique-up-to-size type variable substitutions \(\sigma_1, \dots, \sigma_n\).
 Note that we can easily generate types of size \(n\) as a sum type of \(n\) \(\texttt{Unit}\)s, so generating these substitutions is straightforward.
 
 As before, \(\gamma\) is a relation environment and matches the relation type context.
@@ -568,7 +570,8 @@ Which makes it easy to count for relations:
 \end{proof}
 
 \begin{theorem}
-	Let \(g\) be a goal, \(\gamma\) be a relation environment, and \(\delta_1, \delta_2\) be value environments.
+	Let \(\Gamma; \Delta \vdash g \wt\), \(\delta_1 : \sigma_1(\Delta)\), \(\delta_2 : \sigma_2(\Delta)\),
+	and \(\gamma : \Gamma\) satisfy for all valid \(\texttt{(\(R\) \(\vec v\))}\): \(\gamma(R)(\den{\vec v}(\delta_1)) = \gamma(R)(\den{\vec v}(\delta_2))\).
 	If \(\delta_1 \eqpatD \delta_2\),
 	\(|\sigma_1(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\),
 	\(|\sigma_2(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\),
@@ -613,13 +616,55 @@ Which makes it easy to count for relations:
 			or \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
 			In the first case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\).
 			In the second case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\).
-			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma' \delta_2; \sigma_2)\).
-		\item \(g = \texttt{(\(R\) \(v\) \(\dots\))}\).
-			% TODO: clarify this case
-			We assume relation calls work as expected.
+			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
+		\item \(g = \texttt{(\(R\) \(\vec v\))}\).
+			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R)(\den{\vec v}(\delta_1))\)
+			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R)(\den{\vec v}(\delta_2))\)
+			By hypothesis, these are equivalent.
 		\item \(g = \texttt{(factor \(k\))}\).
 			\(\den{\texttt{(factor \(k\))}}(\gamma; \delta_1; \sigma_1) = k = \den{\texttt{(factor \(k\))}}(\gamma; \delta_2; \sigma_2)\)
 	\end{itemize}
 \end{proof}
+
+The condition on \(\gamma\) is quite restrictive.
+For example, given \(\Delta \vdash x : \alpha\) with \(\sigma_1(\alpha) = 1\) and \(\sigma_2(\alpha) = 2\),
+then \(\gamma\) is not allowed to hold relations like \(\texttt{two-valued}\).
+Here, \(\texttt{(two-valued \(x\))}\) would fail under \(\delta_1\) but succeed under \(\delta_2\).
+Ideally, we should use something smarter than \(\#_\alpha g(\Delta)\), so that the type variable sizes account for these sorts of relation calls.
+A smarter variant may have relation calls push size requirements upward to their arguments, with a fixpoint process to allow for recursive calls.
+
+We now define a function to generate code to enforce equality patterns between two sub-environments.
+Because the generated code should work with potentially any value sub-environments, we define the function in terms of the type sub-environments.
+Let \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\), and \(\alpha, \dots \in \Delta\).
+For convenience, assume \(\envshell\) and \(\envholes\) operate on type sub-environments like \(\Delta_1\), \(\Delta_2\)
+by extracting shells or all possible holes as values, written in terms of ancillary variables.
+In practice, this is handled manually.
+
+\begin{align*}
+	& \enforceeqpatD(\Delta_1, \Delta_2) = \\
+	& \quad \texttt{(fresh (\textrm{ancillary variables for \(\envshell\) and \(\envholes\)})} \\
+	& \quad \quad \texttt{(conj }\\
+	& \quad \quad \quad \textrm{deconstruct \(\Delta_1\) and \(\Delta_2\) into the ancillary variables} \\
+	& \quad \quad \quad \texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))} \\
+	& \quad \quad \quad \text{for \(i,j \in 1,\dots,\#_\alpha\Delta\)} \\
+	& \quad \quad \quad \quad \texttt{(disj} \\
+	& \quad \quad \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \quad \quad \texttt{(== \(\envholes_{\alpha \in \Delta}(\Delta_1)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_1)(j)\))} \\
+	& \quad \quad \quad \quad \quad \quad \texttt{(== \(\envholes_{\alpha \in \Delta}(\Delta_2)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_2)(j)\)))} \\
+	& \quad \quad \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \quad \quad \texttt{(=/= \(\envholes_{\alpha \in \Delta}(\Delta_1)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_1)(j)\))} \\
+	& \quad \quad \quad \quad \quad \quad \texttt{(=/= \(\envholes_{\alpha \in \Delta}(\Delta_2)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_2)(j)\))))} \\
+	& \quad \quad \quad \dots \texttt{))}
+\end{align*}
+
+Note that \(\envholes_{\alpha \in \Delta}(\Delta_1)\) may include holes that are not valid given the current structure of \(\envshell_\Delta(\Delta_1)\).
+Of course, similar applies for \(\Delta_2\).
+In these cases, no constraints are imposed on the corresponding ancillary variables during the deconstruction; they have no impact at this stage.
+For at least one concrete value environment, we know the \(\texttt{==}\) case of the \(\texttt{disj}\) is guaranteed to succeed.
+The \(\texttt{=/=}\) case may also succeed for some other value environment.
+In either case, this results in the weight \(1\) for the \(\texttt{disj}\) and therefore does not impact the weight of the outer \(\texttt{conj}\).
+Because we will still require \(+\) to be idempotent and commutative,
+the sum corresponding to the outer \(\texttt{fresh}\) for ancillary variables also does not change the overall weight when there are multiple such successes.
+So while we do operate on extra holes, they have no impact to the overall weight and can be ignored.
 
 \end{document}

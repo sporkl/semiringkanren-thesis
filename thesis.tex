@@ -72,7 +72,7 @@ We expand the syntax and typing of minimal semiringKanren to support polymorphic
 \end{figure}
 
 Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
-The \(\Delta \vdash v:\tau\) is the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
+We use \(\Delta \vdash v:\tau\) to denote the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
 The \(\Gamma;\Delta \vdash g \wt\) judgement denotes that the goal \(g\) is well-typed under the \(\Gamma\) and \(\Delta\) contexts.
 The \(\Gamma \vdash R \wt\) judgement denotes that the relation \(R\) is well-typed under the \(\Gamma\) context, and the \(P \wt\) judgement denotes that the entire program is well-typed.
 The \(\Delta \vdash \tau \vt\) judgement denotes that the type \(\tau\) is valid under the \(\Delta\) context.
@@ -85,7 +85,7 @@ Note that our relation typing judgement is "the relation is well-typed under a c
 Relations are required to specify all needed typing information, so it only is necessary to check that their bodies are compatible.
 Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
 Also note that in the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
-Finally, note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as relation calls).
+Finally, note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
 
 We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \; \dots \; (x_n : \tau_n)\), or similar.
 We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
@@ -108,7 +108,7 @@ We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs some
 	\and
 	\infer{ }{\Delta,\alpha : * \vdash \alpha \vt}
 \end{mathpar}
-\caption{Inference rules for type validity judgement.}
+\caption{Inference rules f r type validity judgement.}
 \end{figure}
 
 \begin{figure}
@@ -209,20 +209,20 @@ We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs some
 	\infer{
 		\Gamma ; \vec \alpha:*, \vec x:\vec \tau \vdash g \wt
 	}{
-		\Gamma \vdash \texttt{(defrel (\(R\) \(\forall \vec \alpha\) . (\(\vec x : \vec \tau\))) \(g\)))} \wt
+		\Gamma \vdash \texttt{(defrel (\(R\) \(\forall \vec \alpha\).(\(\vec x : \vec \tau\))) \(g\)))} \wt
 	}
 	\and
 	\infer{
 		(R_1 : \forall \vec \alpha_1 . \vec \tau_1 \rightarrow), \dots, (R_N : \forall \vec \alpha_N . \vec \tau_N \rightarrow) \vdash
-		\texttt{(defrel (\(R_1\) \(\forall \vec \alpha_1\) . (\(\vec x_1 : \vec \tau_1\))) \(g_1\))} \wt
+		\texttt{(defrel (\(R_1\) \(\forall \vec \alpha_1\).(\(\vec x_1 : \vec \tau_1\))) \(g_1\))} \wt
 		\\\\
 		\vdots
 		\\\\
 		(R_1 : \forall \vec \alpha_1 . \vec \tau_1 \rightarrow), \dots, (R_N : \forall \vec \alpha_N . \vec \tau_N \rightarrow) \vdash
-		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\) . (\(\vec x_N : \vec \tau_N\))) \(g_1\))} \wt
+		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\).(\(\vec x_N : \vec \tau_N\))) \(g_1\))} \wt
 	}{
-		\texttt{(defrel (\(R_1\) \(\forall \vec \alpha_1\) . (\(\vec x_1:\vec \tau_1\))) \(g_1\)))}, \dots, \\\\
-		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\) . (\(\vec x_N:\vec \tau_N\))) \(g_N\)))} \wt
+		\texttt{(defrel (\(R_1\) \(\forall \vec \alpha_1\).(\(\vec x_1:\vec \tau_1\))) \(g_1\)))}, \dots, \\\\
+		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\).(\(\vec x_N:\vec \tau_N\))) \(g_N\)))} \wt
 	}
 \end{mathpar}
 \caption{Inference rules for relation and program typing judgements.}
@@ -232,7 +232,8 @@ We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs some
 
 Here we update the denotational semantics to handle type variables.
 We use the term "concrete types" for types which do not contain type variables.
-We introduce \emph{type variable substitutions}, which we apply to a type to turn it into a concrete type, by replacing type variables with specific concrete types.
+We introduce \emph{type variable substitutions}, which we apply to a types potentially containing type variables, to turn them into a concrete types
+Type variable substitutions walk the tree structure of the type, and replace type variables with specific concrete types.
 
 Temporarily ignoring substitutions, imagine we wish to operate on values of an unknown type.
 In order to represent such a value with the array-based semantics, we need to know the size of the type so that we can have a large enough corresponding array dimension.
@@ -240,17 +241,17 @@ Once we have space for the type, we can easily define equality and disequality o
 This generalizes to values which may only partially consist of an unknown type.
 But because the specifics of the types are unknown, we have no other operations.
 Thus, we can treat all unknown types of the same size equivalently.
-As such, for each relation \(R\) with type variables \(\alpha, \dots, \gamma\),
+As such, for each relation \(R\) with type variables \(\alpha, \dots, \beta\),
 we generate concrete "monomorphic" instances of these relations \(R_{\sigma_1}, \dots, R_{\sigma_n}\), corresponding to all unique-up-to-size type variable substitutions \(\sigma_1, \dots, \sigma_n\).
 Note that we can easily generate types of size \(n\) as a sum type of \(n\) \(\texttt{Unit}\)s, so generating these substitutions is straightforward.
 
 As before, \(\gamma\) is a relation environment and matches the relation type context.
-\(\gamma\) is a map from relation names to multidimensional arrays.
-Similarly, \(\delta\) is the variable environment with type \(\sigma(\Delta)\).
-\(\delta\) is a map from variable names to values.
-As before, the denotation for types is a set of specific values.
-We handle type variables by applying \(\sigma\) before taking the denotation of a type.
+More specifically, \(\gamma\) is a map from relation names to multidimensional arrays.
 We use the term "concrete value" to refer to values constructed from \texttt{sole}, \texttt{(left \(v\))}, \texttt{(right \(v\))}, and \texttt{(pair \(v_1\) \(v_2\))}; concrete values can not be variables.
+Let \(\delta\) be a value environment with type \(\sigma(\Delta)\).
+As before, \(\delta\) is a map from variable names to concrete values.
+The denotation for types is still as a set of specific values.
+We handle type variables by applying \(\sigma\) before taking the denotation of a type.
 The denotation for values under a variable context is a specific concrete value.
 The denotation for goals is expressed as a weight for each individual assignment of values to variables, but should be considered as a multidimensional array across all possible assignments.
 We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing.
@@ -324,8 +325,7 @@ We assume that all needed monomorphic instances of each relation are included in
 
 Shells are very similar to values, but additionally have holes which are associated with a single, non-composite type variable.
 
-Given a concrete value with a corresponding type (including type variables), we can separate it into a shell and an ordered list of holes (corresponding to a single type variable) as follows:
-
+Given a concrete value with a corresponding type (including type variables), we can find its shell as follows:
 \begin{align*}
 	\shell_\texttt{Unit}(\texttt{sole}) &= \texttt{sole} \\
 	\shell_\texttt{(Sum \(\tau_1\) \(\tau_2\))}(\texttt{(left \(v\))}) &= \texttt{(left \(\shell_{\tau_1}(v)\))} \\
@@ -335,7 +335,6 @@ Given a concrete value with a corresponding type (including type variables), we 
 \end{align*}
 
 We use \(\holes_{\alpha \in \tau}(v)\) to denote the values of the holes corresponding to type variable \(\alpha\) within type \(\tau\).
-
 \begin{align*}
 	\holes_{\alpha \in \tau}(\texttt{sole}) &= \emptyset \\
 	\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(\texttt{(left \(v\))}) &= \holes_{\alpha \in \tau_1}(v) \\
@@ -346,7 +345,6 @@ We use \(\holes_{\alpha \in \tau}(v)\) to denote the values of the holes corresp
 \end{align*}
 
 We also have versions of these functions which apply to \emph{value environments} (notated as \(\delta\) in the semantics) with corresponding type environments.
-
 \begin{align*}
 	\envshell_{\emptyset}() &= \emptyset \\
 	\envshell_{\Delta, \tau}(\vec x \mapsto \vec v, x \mapsto v) &= \envshell_{\Delta}(\vec x \mapsto \vec v), x \mapsto \shell_{\tau}(v)
@@ -364,7 +362,10 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 	Then \(v_1 = v_2\) iff \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\).
 \end{lemma}
 \begin{proof}
-	Assuming \(v_1 = v_2\), we trivially have \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_\alpha(v_1) = \holes_\alpha(v_2) \; \forall \alpha \in \tau\) by substitution.
+	Assuming \(v_1 = v_2\), by substitution we trivially have:
+	\[\shell_\tau(v_1) = \shell_\tau(v_2)\]
+	\[\holes_\alpha(v_1) = \holes_\alpha(v_2) \; \forall \alpha \in \tau\]
+	Thus the \(\implies\) direction holds.
 
 	Now assume \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\), and aim to show \(v_1 = v_2\).
 	Proof by induction on \(\Delta \vdash v_1 : \tau\) and \(\Delta \vdash v_2 : \tau\).
@@ -377,27 +378,29 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 			This is only possible in two cases.
 			\begin{itemize}
 				\item Subcase: \(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\) where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\).
-					We know \(\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\),
-					so we can deduce by definition that \(\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau\).
+					We know: \[\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\]
+					so we can deduce by definition: \[\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau\]
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
 					Thus \(\texttt{(left \(v_1'\))} = \texttt{(left \(v_2'\))}\), and so \(v_1 = v_2\).
 				\item Subcase: \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\) where \(\shell_{\tau_2}(v_1') = \shell_{\tau_2}(v_2')\).
-					We know \(\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\),
-					so we can deduce by definition that \(\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau\).
+					We know: \[\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\]
+					so we can deduce by definition: \[\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau\]
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
 					Thus \(\texttt{(right \(v_1'\))} = \texttt{(right \(v_2'\))}\), and so \(v_1 = v_2\).
 			\end{itemize}
 			In either case \(v_1 = v_2\).
 		\item Case: \(\tau = \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
-			We have \(\shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2)\).
+			We have:
+			\[\shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2)\]
 			This is only possible when \(v_1 = \texttt{(pair \(v_1'\) \(v_1''\))}\) and \(v_2 = \texttt{(pair \(v_2'\) \(v_2''\))}\),
 			where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\) and \(\shell_{\tau_2}(v_1'') = \shell_{\tau_2}(v_2'')\).
-			We also have \(\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2) \;
-			\forall \alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
-			By definition of \(\holes\), we therefore have: \(\holes_{\alpha \in \tau_1}(v_1'),\holes_{\alpha \in \tau_1}(v_1'') = \holes_{\alpha \in \tau_1}(v_2'),\holes_{\alpha \in \tau_1}(v_2'')\).
+			We also have:
+			\[\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}\]
+			By definition of \(\holes\), we therefore have: \[\holes_{\alpha \in \tau_1}(v_1'),\holes_{\alpha \in \tau_1}(v_1'') = \holes_{\alpha \in \tau_1}(v_2'),\holes_{\alpha \in \tau_1}(v_2'')\]
 			Because \(\shell_{\tau_1}(v'_1) = \shell_{\tau_1}(v'_2)\) and \(\shell_{\tau_2}(v''_1) = \shell_{\tau_2}(v''_2)\),
-			we can count holes to deduce: \(\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau_1\),
-			and \(\holes_{\alpha \in \tau_2}(v_1'') = \holes_{\alpha \in \tau_2}(v_2'') \; \forall \alpha \in \tau_2\).
+			we can match up the locations of holes to deduce:
+			\[\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau_1\]
+			\[\holes_{\alpha \in \tau_2}(v_1'') = \holes_{\alpha \in \tau_2}(v_2'') \; \forall \alpha \in \tau_2\]
 			By the inductive hypothesis, we have \(v_1' = v_2'\) and \(v_1'' = v_2''\).
 			Thus, \(\texttt{(pair \(v_1'\) \(v_1''\))} = \texttt{(pair \(v_2'\) \(v_2''\))}\), and so \(v_1 = v_2\).
 		\item Case: \(\tau = \alpha\) (for any type variable).
@@ -421,7 +424,8 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 	\end{itemize}
 \end{definition}
 
-Note that because the envshells for each value environment are equal, both environments must have the same number of holes in the same locations; the third condition relies on the second condition.
+Note that because the envshells for each value environment are equal, both environments must have the same number of holes in the same locations;
+the third condition only makes sense if the second condition holds.
 The third condition boils down to "if pairs of holes are equal for one value environment, then they must also be equal for the other value environment" (and similar for disequality).
 
 \begin{lemma}
@@ -434,7 +438,7 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	It remains to show that the \(\eqpatD\) conditions for holes forms an equivalence relation for value environments.
 
 	\(\eqpatD\) is obviously reflexive; for holes \(h, k\) at type \(\alpha\), we either have \(h = k\) and \(h = k\), or \(h \ne k\) and \(h \ne k\).
-	This boils down to saying \(h = k\) or \(h \ne k\), which is clearly true.
+	This boils down to saying that either \(h = k\) or \(h \ne k\); clearly one of these must be true.
 
 	Let \(\delta_1 \eqpatD \delta_2\) be value environments with respective holes at indices \(i, j\): \(h_1, k_1\) and \(h_2, h_2\), for type \(\alpha\).
 	We have \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\).
@@ -444,7 +448,7 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	Now assume \(\delta_1 \eqpatD \delta_2\) and \(\delta_2 \eqpatD \delta_3\), and aim to show \(\delta_1 \eqpatD \delta_3\).
 	Choose type variable \(\alpha\), and \(\alpha\)-holes at indices \(i, j\) for each value environment: \(h_1, k_1\), \(h_2, k_2\), and \(h_3, k_3\).
 	There are two cases to consider: \(h_1 = k_1\) and \(h_2 = k_2\) and \(h_3 = k_3\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\) and \(h_3 \ne k_3\).
-	Any other cases do not satisfy the equality pattern precondition.
+	Any other cases do not satisfy the equality pattern conditions.
 	In the first case, we have \(h_1 = k_1\) and \(h_3 = k_3\).
 	In the second case, we have \(h_1 \ne k_1\) and \(h_3 \ne k_3\).
 	This applies for any arbitrarily chosen \(\alpha\)-holes of \(\delta_1, \delta_3\) at corresponding indices, for any \(\alpha\), thus we have \(d_1 \eqpatD d_3\), and so \(\eqpatD\) is transitive.
@@ -498,7 +502,7 @@ The third condition boils down to "if pairs of holes are equal for one value env
 	Therefore by transitivity of equality:
 	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) \]
 	This holds for any \(\alpha \in \tau\) and any valid index \(i\), so we have:
-	\[ \holes_{\alpha \in \Delta}(\den{v_1}(\delta_2)) = \holes_{\alpha \in Delta}(\den{v_2}(\delta_2))\]
+	\[ \holes_{\alpha \in \Delta}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \Delta}(\den{v_2}(\delta_2))\]
 
 	We have shown \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\) and
 	\(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
@@ -600,12 +604,18 @@ Which makes it easy to count for relations:
 	Proof by induction on the goal structure of \(g\).
 	\begin{itemize}
 		\item \(g = \texttt{(conj \(g_1\) \(g_2\))}\).
-			By the inductive hypothesis, \(\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)\) and \(\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)\)
-			Thus \(\den{g_1}(\gamma; \delta_1; \sigma_1) * \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) * \den{g_2}(\gamma; \delta_2; \sigma_2)\),
+			By the inductive hypothesis:
+			\[\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)\]
+			\[\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)\]
+			Thus:
+			\[\den{g_1}(\gamma; \delta_1; \sigma_1) * \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) * \den{g_2}(\gamma; \delta_2; \sigma_2)\],
 			and so \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(disj \(g_1\) \(g_2\))}\).
-			By the inductive hypothesis, \(\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)\) and \(\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)\)
-			Thus \(\den{g_1}(\gamma; \delta_1; \sigma_1) + \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) + \den{g_2}(\gamma; \delta_2; \sigma_2)\),
+			By the inductive hypothesis:
+			\[\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)\]
+			\[\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)\]
+			Thus:
+			\[\den{g_1}(\gamma; \delta_1; \sigma_1) + \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) + \den{g_2}(\gamma; \delta_2; \sigma_2)\]
 			and so \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(fresh ((\(x : \tau\))) \(g'\))}\).
 			\(|\sigma_1(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\), so \(|\sigma_1(\alpha)| \ge \#_\alpha g'(\Delta,\tau) \; \forall \alpha \in \Delta\).
@@ -613,34 +623,55 @@ Which makes it easy to count for relations:
 			there exists \(\sigma_2(\Delta) \vdash v_2 : \sigma_2(\tau)\) where \(\delta_1, x \mapsto v_1 \eqpat_{\Delta, \tau} \delta_2, x \mapsto v_2\).
 			Similarly, \(|\sigma_2(\alpha)| \ge \#_\alpha g'(\Delta,\tau) \; \forall \alpha \in \Delta\), so for any \(\sigma_2(\Delta) \vdash v_2 : \sigma_2(\tau)\),
 			there exists \(\sigma_1(\Delta) \vdash v_1 : \sigma_1(\tau)\) where \(\delta_1, x \mapsto v_1 \eqpat_{\Delta, \tau} \delta_2, x \mapsto v_2\).
-			Thus \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = w_1 + \dots + w_n\),
-			and \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = w'_1 + \dots + w'_m\),
+			Thus:
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = w_1 + \dots + w_n\]
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = w'_1 + \dots + w'_m\]
 			where each weight \(w_1, \dots, w_n\) appears at least once in \(w'_1, \dots, w'_m\),
 			and each weight \(w'_1, \dots, w'_m\) appears at least once in \(w_1, \dots, w_n\).
 			Let \(r_1, \dots, r_k\) be the unique weights appearing in both sums.
 			We require the semiring to be commutative, so we can group identical weights together.
-			We therefore have: \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = (r_1 + \dots) + \dots + (r_k + \dots)\),
-			and \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = (r_1 + \dots\dots) + \dots + (r_k + \dots\dots)\).
+			We therefore have:
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = (r_1 + \dots) + \dots + (r_k + \dots)\]
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = (r_1 + \dots\dots) + \dots + (r_k + \dots\dots)\]
 			We require \(+\) to be idempotent.
-			Thus: \(\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = r_1 + \dots + r_k = \den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2)\)
+			Thus:
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = r_1 + \dots + r_k\]
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = r_1 + \dots + r_k\]
+			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = \den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2)\]
 		\item \(g = \texttt{(== \(v_1\) \(v_2\))}\).
-			By lemma \ref{lem:eqpat-substitution}, we either have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\),
-			or \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
-			In the first case, \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\).
-			In the second case, \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\).
+			By lemma \ref{lem:eqpat-substitution}, we either have:
+			\[\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\]
+			\[\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\]
+			or
+			\[\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\]
+			\[\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\]
+			In the first case:
+			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\]
+			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\]
+			In the second case:
+			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\]
+			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\]
 			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(=/= \(v_1\) \(v_2\))}\).
-			By lemma \ref{lem:eqpat-substitution}, we either have \(\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\),
-			or \(\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\) and \(\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\).
-			In the first case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\).
-			In the second case, \(\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\) and \(\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\).
+			By lemma \ref{lem:eqpat-substitution}, we either have
+			\[\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\]
+			\[\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\]
+			or
+			\[\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\]
+			\[\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\]
+			In the first case:
+			\[\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\]
+			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\]
+			In the second case:
+			\[\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\]
+			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\]
 			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(\(R\) \(\vec v\))}\).
-			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R_{\sigma'})(\den{\vec v}(\delta_1))\)
-			\(\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R_{\sigma''})(\den{\vec v}(\delta_2))\)
-			By the hypothesis that all relations in \(\gamma\) are large-enough, these are equivalent.
+			\[\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R_{\sigma'})(\den{\vec v}(\delta_1))\]
+			\[\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R_{\sigma''})(\den{\vec v}(\delta_2))\]
+			By the hypothesis that all relations in \(\gamma\) are large-enough, and that \(\delta_1 \eqpatD \delta_2\), these are equivalent.
 		\item \(g = \texttt{(factor \(k\))}\).
-			\(\den{\texttt{(factor \(k\))}}(\gamma; \delta_1; \sigma_1) = k = \den{\texttt{(factor \(k\))}}(\gamma; \delta_2; \sigma_2)\)
+			\[\den{\texttt{(factor \(k\))}}(\gamma; \delta_1; \sigma_1) = k = \den{\texttt{(factor \(k\))}}(\gamma; \delta_2; \sigma_2)\]
 	\end{itemize}
 \end{proof}
 
@@ -651,10 +682,10 @@ Here, \(\texttt{(two-valued \(x\))}\) would fail under \(\delta_1\) but succeed 
 Ideally, we should use something smarter than \(\#_\alpha g(\Delta)\), so that the type variable sizes account for these sorts of relation calls.
 A smarter variant may have relation calls push size requirements upward to their arguments, with a fixpoint process to allow for recursive calls.
 
-We now aim to compile monomorphized relation calls to instead call the just smallest large-enough relation.
+We now aim to compile arbitrary large-enough relation calls to instead call the smallest large-enough relation.
 While it remains necessary to keep monomorphized relation instances for calls smaller than the smallest large-enough instance.
 this allows us to remove all monomorphized instances larger than the smallest large-enough instance.
-In practice, implementation of this compilation scheme is verbose, so we reason here with a simplified/idealized version of the code.
+In practice, implementation of this compilation scheme is verbose, so we reason here with a simplified/idealized version of the process.
 Rather than a formal demonstration of correctness, the following proofs aim to sketch an intuitive idea of why this method works.
 
 We define a function to generate code to enforce equality patterns between two sub-environments.
@@ -708,11 +739,13 @@ because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
 
 	First assume \(\delta_1 \eqpatD \delta_2\) and aim to show: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\]
 	\(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\),
-	so \(\texttt{(== \(\envshell_{\Delta}(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))}\) succeeds under \(\delta_1, \delta_2\).
+	so
+	\[\texttt{(== \(\envshell_{\Delta}(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))}\]
+	succeeds under \(\delta_1, \delta_2\).
 	Similarly, for any \(\alpha\), for any holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
-	and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_2\),
+	and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_2)\),
 	then either \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) or \(h_2 \ne k_2\).
-	Exactly one branch of the \(\texttt{disj}\) succeeds for each \(\alpha, i, j\) (and we can ignore holes which do not "exist" here), so all such \(\texttt{disj}\)s have weight 1.
+	Thus exactly one branch of the \(\texttt{disj}\) succeeds for each \(\alpha, i, j\) (and we can ignore holes which do not "exist" here), so all such \(\texttt{disj}\)s have weight 1.
 	We have also argued that deconstructing \(\Delta_1, \Delta_2\) into ancillary variables succeeds, and relatedly that we can ignore the outer \(\texttt{fresh}\).
 	Thus we have a conjunction of sub-goals of weight 1, which is the multiplicative identity, so the total weight is 1.
 
@@ -724,7 +757,9 @@ because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
 	we have \(h_1 = k_1\) and \(h_2 \ne k_2\), or \(h_1 \ne k_1\) and \(h_2 = k_2\).
 	
 	In the first case, \(\envshell_\Delta(\delta_1) \ne \envshell_\Delta(\delta_2)\).
-	Thus \(\texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_\Delta(\Delta_2)\))}\) fails under \(\delta_1, \delta_2\).
+	Thus the goal
+	\[\texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_\Delta(\Delta_2)\))}\]
+	fails under \(\delta_1, \delta_2\).
 	This corresponds to weight \(0\), which is a multiplicative annihilator.
 	Thus the outer \(\texttt{conj}\) has weight \(0\), and so the generated code has weight \(0\) under \(\delta_1, \delta_2\).
 
@@ -764,7 +799,7 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 	\]
 
 	First consider subcases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) fails.
-	\(0\) is multiplicative annihilator, so these cases all result in weight \(0\).
+	We know \(0\) is multiplicative annihilator, so these cases all result in weight \(0\).
 
 	Now consider subcases cases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds.
 	Within the \(\texttt{fresh}\), our environment is \(\delta_1, \delta_2 : \Delta_1, \Delta_2\).

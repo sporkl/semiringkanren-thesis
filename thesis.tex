@@ -38,7 +38,102 @@
 
 \chapter{Polymorphic semiringKanren}
 
-\section{Typing rules}
+\section{Polymorphic relations}
+
+We extend semiringKanren with \emph{polymorphic relations}, which operate on values of unknown types (represented with \emph{type variables}).
+We introduce polymorphic relations by example.
+
+Consider the following relation:
+\begin{align*}
+	& \texttt{(defrel (equal (\(x : \alpha\)) (\(y : \alpha\)))} \\
+	& \quad \texttt{(== \(x\) \(y\)))}
+\end{align*}
+This relation takes in two values of the same variable type, and checks that they are equal.
+We can call this relation at different types.
+For example, following call succeeds:
+\[ \texttt{(equal sole sole)} \]
+while the following call fails:
+\[ \texttt{(equal (pair (left sole) (right sole)) (pair (right sole) (left sole)))} \]
+In the first example, \(\alpha\) gets mapped to the type \(\texttt{Unit}\)
+In the second example, \(\alpha\) gets mapped to the type \(\texttt{(Prod (Sum Unit Unit) (Sum Unit Unit))}\).
+Note that the primitive relations \(\texttt{==}\) and \(\texttt{=/=}\) are polymorphic, even in the base language;
+they can operate on any type, including variable types, as long as both arguments have the same type.
+
+Continuing to a larger example:
+\begin{align*}
+	& \texttt{(defrel (sum-swap (\(x : \texttt{(Sum \(\alpha\) \(\beta\))}\)) (\(y : \texttt{(Sum \(\beta\) \(\alpha\))}\)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad \quad \texttt{(fresh ((\(a : \alpha\)))} \\
+	& \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \texttt{(== \(x\) (left \(a\)))} \\
+	& \quad \quad \quad \quad \texttt{(== \(y\) (right \(a\)))))} \\
+	& \quad \quad \texttt{(fresh ((\(b : \beta\)))} \\
+	& \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \texttt{(== \(x\) (right \(b\)))} \\
+	& \quad \quad \quad \quad \texttt{(== \(y\) (left \(b\)))))))} \\
+\end{align*}
+This relation replaces top-level \(\texttt{left}\)s in a sum type with \(\texttt{right}\)s, and vice versa.
+We can have multiple type variables, and include type variables within larger type structures.
+Assuming we call \(\texttt{sum-swap}\) with \(\alpha = \texttt{Unit}\) and \(\beta = \texttt{(Sum Unit Unit)}\),
+\[ \texttt{(sum-swap (left sole) \(q\))} \]
+succeeds when \(q = \texttt{(right sole)}\), and
+\[ \texttt{(sum-swap (right (right sole)) \(q\))} \]
+succeeds when \(q = \texttt{(left (right sole))}\).
+When we have multiple type variables, they can be mapped to different types.
+
+As a "real-world" motivating example, consider the following:
+\begin{align*}
+	& \texttt{(defrel (option-map} \\
+	& \quad \texttt{(\(f : \texttt{(Prod \(\alpha\) \(\beta\))}\)) (\(x : \texttt{(Sum Unit \(\alpha\))}\)) (\(y : \texttt{(Sum Unit \(\beta\))}\)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \texttt{(== \(x\) (left sole))} \\
+	& \quad \quad \quad \texttt{(== \(y\) (left sole)))} \\
+	& \quad \quad \texttt{(fresh ((\(a : \alpha\)) (\(b : \beta\)))} \\
+	& \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \texttt{(== \(x\) (right \(a\)))} \\
+	& \quad \quad \quad \quad \texttt{(== \(f\) (pair \(a\) \(b\)))} \\
+	& \quad \quad \quad \quad \texttt{(== \(y\) (right \(b\)))))))} \\
+\end{align*}
+The type \(\texttt{(Sum Unit \(\alpha\))}\) can be thought of as an "option type" where \(\texttt{(right \(v\))}\) can be thought of carrying a value,
+and \(\texttt{(left sole)}\) can be though of not carrying a value, or "null."
+Functional analogs of \(\texttt{option-map}\) are common in typed functional programming languages when working with optional values.
+The relation \(\texttt{option-map}\) takes a relation call encoded as a pair, and applies it to the "value" part of \(x\) and \(y\) if possible.
+For example, \(\texttt{option-map}\) may be called as follows:
+\begin{align*}
+	& \texttt{(fresh ((\(h : \texttt{(Sum Unit Unit)}\)) (\(k : \texttt{Sum Unit Unit}\)))} \\
+	& \quad \texttt{(conj} \\
+	& \quad \quad \texttt{(sum-swap \(h\) \(k\))} \\
+	& \quad \quad \texttt{(option-map (pair \(h\) \(k\)) (right (left sole)) \(q\))))}
+\end{align*}
+Which would succeed for \(q = \texttt{(right (right sole))}\).
+Here, both \(\alpha\) and \(\beta\) are mapped to \(\texttt{(Sum Unit Unit)}\) within the \(\texttt{option-map}\) call.
+
+We present one more example:
+\begin{align*}
+	& \texttt{(two-valued (\(x : \alpha\))} \\
+	& \quad \texttt{(fresh ((\(y : \alpha\)))} \\
+	& \quad \quad \texttt{(=/= \(x\) \(y\))))}
+\end{align*}
+This relation succeeds when it can find a value of the argument's type disequal from the argument.
+For example, assuming \(\alpha\) gets mapped to \(\texttt{Sum Unit Unit}\) the following succeeds:
+\[\texttt{two-valued (left sole))}\]
+because it can find \(y\) with the value \(\texttt{(right sole)}\).
+However, consider calling \(\texttt{two-valued}\) with \(\alpha\) mapped to \(\texttt{Unit}\):
+\[\texttt{(two-valued sole)}\]
+This call fails, because the only value of type \(\texttt{Unit}\) is \(\texttt{sole}\), and \(\texttt{(=/= sole sole)}\) fails.
+Success/failure depends on the type of the argument of \(\texttt{two-value}\) rather than the value.
+
+The obvious way to implement polymorphism is to generate multiple instances of each relation for each type variable mapping that gets used.
+This is known as \emph{monomorphization}, and is historically the only way polymorphism has been implemented for bottom-up relational languages.
+With semiringKanren, we present a new method of implementing polymorphism based on \emph{large-enough instances} of polymorphic relations,
+where polymorphic relation calls with arbitrary type mappings are compiled to only use a single type mapping, with extra code generated at call sites to reconstruct the desired types.
+
+We first present the syntax and typing rules for semiringKanren extended with polymorphic relations.
+Next, we provide a semantics for polymorphic semiringKanren based on monomorphization.
+Finally, we show how polymorphic relation calls can be compiled to use large-enough instances, and prove the correctness of this approach.
+
+\section{Syntax and typing}
 
 We expand the syntax and typing of minimal semiringKanren to support polymorphic relations.
 

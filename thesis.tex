@@ -417,7 +417,7 @@ We assume that all needed monomorphic instances of each relation are included in
 
 \section{Non-monomorphizing semantics}
 
-In practice, semiringKanren avoids the need for monomorphization by using \emph{small-enough relations} and \emph{equality patterns}.
+In practice, semiringKanren avoids the need for monomorphization by using \emph{large-enough relations} and \emph{equality patterns}.
 Let us revisit the \(\texttt{sum-swap}\) relation:
 \begin{align*}
 	& \texttt{(defrel (sum-swap (\(x : \texttt{(Sum \(\alpha\) \(\beta\))}\)) (\(y : \texttt{(Sum \(\beta\) \(\alpha\))}\)))} \\
@@ -502,17 +502,62 @@ Here \(|\sigma_1(\alpha)| = 2\) and \(\sigma_2(\alpha) = \texttt{Unit}\).
 This equality pattern \emph{does} hold. The shells are equal,
 and the holes are equal both under \(\delta_1\) (\(\mathtt{0_2} = \mathtt{0_2}\)) and under \(\delta_2\) (\(\texttt{sole} = \texttt{sole}\)).
 
-% talk about large-enough relation and counting type variable occurences, with sum-swap as example
+For \(\texttt{sum-swap}\), we have determined that we can reproduce a call with \(|\alpha| = 3, |\beta| = 4\) using an array corresponding to type variable sizes \(|\alpha| = 3, |\beta| = 3\).
+Now we aim to do similar for \(\texttt{two-valued}\):
+\begin{align*}
+	& \texttt{(two-valued (\(x : \alpha\))} \\
+	& \quad \texttt{(fresh ((\(y : \alpha\)))} \\
+	& \quad \quad \texttt{(=/= \(x\) \(y\))))}
+\end{align*}
+When \(|\alpha| = 2\), \(\texttt{two-valued}\) is denoted as follows:
+\[ \begin{bmatrix} 1 & 1 \end{bmatrix} \]
+If we aim to use this to reproduce the array for \(\texttt{two-valued}\) when \(|\alpha| = 1\), no matter which entry we look in, we find the weight \(1\).
+Thus, the denotation we calculate for \(|\alpha| = 1\) is:
+\[ \begin{bmatrix} 1 \end{bmatrix} \]
+which indicates success.
+But we have already established \(\texttt{(two-valued sole)}\) (which has \(|\alpha| = 1\)) should fail, meaning the correct denotation should be:
+\[ \begin{bmatrix} 0 \end{bmatrix} \]
 
-% brief explanation of compilation approach
+To summarize, the expected behavior of \(\texttt{two-valued}\) is to fail when called with a value with type size \(1\), and succeed for any value with type size greater than \(1\).
+This means that we cannot use blindly the equality pattern technique everywhere.
+In particular, both the call site and the particular called relation instance must be \emph{large-enough} for equality patterns to work correctly.
+Recall that the equality pattern process "looks up" locations in the source array where holes have the same equalities/disequalities.
+In the most extreme case, all holes might be disequal.
+Thus the size of each type variable needs to be "large-enough" to hold as many distinct values as there are possible holes.
+Holes correspond to type variables, so we can calculate this value by finding the maximum number of times each type variable appears in an environment,
+anywhere within the goal structure of the relation.
 
-% work through two-valued type example
+For example, in \(\texttt{sum-swap}\), \(\alpha\) and \(\beta\) both appear in the environment at most \(3\) times: twice from the relation arguments, and once under the \(\texttt{fresh}\)es.
+Thus \(\texttt{sum-swap}\) is large-enough for \(|\alpha| = 3\) and \(|\beta| = 3\).
+In \(\texttt{two-valued}\), \(\alpha\) appears in the environment at most twice: once from the argument, and once from the fresh.
+Thus \(\texttt{two-valued}\) is large-enough when \(|\alpha| = 2\).
+When a relation call is not large-enough, we do still need to generate a monomorphized version of the called relation.
 
+While we describe the equality pattern approach in terms of "looking up entries in the arrays," in practice we implement it by compiling polymorphic semiringKanren programs into non-polymorphic ones.
+In particular, polymorphic relation calls are handled in two steps.
+First, we call the smallest large-enough relation with fresh variables.
+Then, we enforce an equality pattern between the fresh variables and the original arguments.
+This is functionally similar to "looking up" entries: calling the relation with fresh variables brings the entries into scope, and enforcing the equality pattern makes sure we get the right weight.
 
-
-
+Getting this to work involves some tricks.
+In particular, we require semiring addition (used in \(\texttt{disj}\) and \(\texttt{fresh}\)) to be idempotent.
+Intuitively, in the monomorphizing semantics, \(\texttt{fresh}\) may sum over different numbers of values, which could make goal weights depend on the size of type variables.
+For example, consider the following goal:
+\begin{align*}
+	& \texttt{(fresh ((\(x  : \alpha\)))} \\
+	& \quad \texttt{(factor 1))}
+\end{align*}
+The weight from this goal is a sum \(|\alpha|\) \(1\)s, and thus may depend on the size of \(\alpha\).
+This is something we're trying to avoid.
+When addition is idempotent, we instead have:
+\[ \den{\texttt{(fresh ((\(x : \alpha\))) (factor 1))}}(\dots) = 1 + \dots + 1 = 1 \]
+regardless of the size of \(\alpha\), because idempotence gives us \(1 + 1 = 1\).
 
 \section{Non-monomorphizing semantics correctness}
+
+We now aim to prove that this compilation scheme works as intended.
+Throughout this section, we assume that we are working over a commutative semiring with multiplicative identity \(1\), additive identity and multiplicative annihlator \(0\),
+and idempotent addition (so \(a + a = a\)).
 
 \begin{definition}
 	We define a \emph{shell} using the following grammar:

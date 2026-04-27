@@ -36,6 +36,18 @@
 
 \maketitle
 
+\chapter{semiringKanren}
+
+\begin{definition}
+	We define the \emph{size of type \(\tau\)}, notated \(|\tau|\), to be the number of values of type \(\tau\).
+	\(\tau\) is undefined when \(\tau\) contains a type variable.
+	\begin{align*}
+		|\tau| = | \den{\tau} |
+	\end{align*}
+\end{definition}
+
+% \chapter{Boolean semiringKanren and SAT solving}
+
 \chapter{Polymorphic semiringKanren}
 
 \section{Polymorphic relations}
@@ -405,6 +417,101 @@ We assume that all needed monomorphic instances of each relation are included in
 
 \section{Non-monomorphizing semantics}
 
+In practice, semiringKanren avoids the need for monomorphization by using \emph{small-enough relations} and \emph{equality patterns}.
+Let us revisit the \(\texttt{sum-swap}\) relation:
+\begin{align*}
+	& \texttt{(defrel (sum-swap (\(x : \texttt{(Sum \(\alpha\) \(\beta\))}\)) (\(y : \texttt{(Sum \(\beta\) \(\alpha\))}\)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad \quad \texttt{(fresh ((\(a : \alpha\)))} \\
+	& \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \texttt{(== \(x\) (left \(a\)))} \\
+	& \quad \quad \quad \quad \texttt{(== \(y\) (right \(a\)))))} \\
+	& \quad \quad \texttt{(fresh ((\(b : \beta\)))} \\
+	& \quad \quad \quad \texttt{(conj} \\
+	& \quad \quad \quad \quad \texttt{(== \(x\) (right \(b\)))} \\
+	& \quad \quad \quad \quad \texttt{(== \(y\) (left \(b\)))))))} \\
+\end{align*}
+When \(|\alpha| = 3\) and \(|\beta| = 3\), \(\texttt{sum-swap}\) is denoted as follows (vertical axis is \(x\), horizontal axis is \(y\)):
+\[
+	\begin{bmatrix}
+		0 & 0 & 0 & 1 & 0 & 0 \\
+		0 & 0 & 0 & 0 & 1 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 1 \\
+		1 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 1 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 1 & 0 & 0 & 0
+	\end{bmatrix}
+\]
+When we keep \(|\alpha| = 3\) but change \(|\beta| = 4\), \(\texttt{sum-swap}\) is denoted as the slightly larger array:
+\[
+	\begin{bmatrix}
+		0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+		1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+	\end{bmatrix}
+\]
+Which clearly has a similar structure to the \(|\alpha|=|\beta|=3\) array: diagonal sub-matrices in the top right and bottom left corners, and zeros everywhere else.
+
+Now, imagine trying to reconstruct the second relation array from the first, only knowing its type signature.
+For each entry, we consider the corresponding value, and try to look up an appropriate corresponding entry in the first array.
+(For brevity, we use numbers subscripted with type size to denote the possible values here).
+For example, the top-left entry of the second array corresponds to  \(x = \texttt{(left \(\mathtt{0_3}\)))}\) and \(y = \texttt{(left \(\mathtt{0_4}\))}\).
+Any entry in the first array with \(x = \texttt{(left \(\dots\))}\) and \(y = \texttt{(right \(\dots\))}\) has weight \(0\), thus we assume this entry in the second array should also have weight \(0\).
+Jumping forward to the fifth entry in the first row: we know this corresponds to \(x = \texttt{(left \(\mathtt{0_3}\))}\) and \(y = \texttt{(right \(\mathtt{0_3}\))}\)
+The parts of these variables corresponding to type variable \(\alpha\) are equal here.
+Similar to before, we can look up any any entry in the first array where \(x = \texttt{(left \(a\))}\), \(y = \texttt{(right \(b\))}\), and we also impose that \(a = b\).
+These correspond to the entries along the top right diagonal of the first array.
+These entries all have weight \(1\), so we adopt that weight here.
+Similarly, any entry in the top-right where \(a \ne b\), such as \(x = \texttt{(left \(\mathtt{1_3}\))}\) and \(y = \texttt{(right \(\mathtt{2_3}\))}\), has a weight of \(0\) which we adopt.
+
+More generally, for each entry in the second array, we consider the \emph{equality pattern} of the values at that entry, and look up an entry with the same equality pattern in the first array.
+When we know the non-variable-typed part of values (such as the top-level \(\texttt{left}\) or \(\texttt{right}\) in the previous example),
+we want to look up an entry whose non-variable-typed part is the same.
+When we know the variable-typed part of values, we consider whether they are equal or disequal to other variable-typed parts at the same entry,
+and look up an entry which has the same equalities and disequalities.
+Because in semiringKanren the only primitive relations on variable-typed values are direct equality or disequality,
+considering soley the equalities/disequalities between the variable-typed parts of a value is sufficient.
+
+Specifically, equality patterns are defined in terms of \emph{shells} and \emph{holes} of value environments.
+The shell of a value environment is the non-variable-typed part, the holes in a value environment are the variable-typed parts.
+Note that holes may come from different type variables; this is important, as we can only check equality/disequality for holes of the same type variable.
+We say that two value environments \(\delta_1, \delta_2\) have the same equality pattern, notated \(\delta_1 \eqpatD \delta_2\),
+when they have the same shell, and when all equal pairs of holes of a type variable in \(\delta_1\) are also equal in \(\delta_2\) (and same for disequality).
+
+For example, consider \(\delta_1 = \sigma_1(\Delta)\) and \(\delta_2 = \sigma_2(\Delta)\), with \(\Delta\) as follows:
+\[\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}, y : \alpha\]
+We will present potential equality patterns of the form \(\delta_1 \eqpatD delta_2\), and explain why they do or do not hold.
+We underline holes for illustration.
+First consider:
+\[ x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} \eqpatD x \mapsto \texttt{(right \underline{sole})}, y \mapsto \texttt{\underline{sole}} \]
+Here \(\alpha = \texttt{Unit}\) for both \(\delta_1\) and \(\delta_2\).
+This equality pattern does \emph{not} hold, because the shells of \(x\), \(\texttt{(left \(\dots\))}\) and \(\texttt{(right \(\dots\))}\), are not equal.
+\[ x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{1_2}} \]
+Here \(|\alpha| = 2\).
+This equality pattern does \emph{not} hold, because the holes are disequal under \(\delta_1\) (\(\mathtt{1_2} \ne \mathtt{0_2}\)), but equal under \(\delta_2\) (\(\mathtt{1_2} = \mathtt{1_2}\)).
+\[ x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \(\underline{\mathtt{0_2}}\))}, y \mapsto \mathtt{\underline{1_2}} \]
+Here again \(|\alpha| = 2\).
+This equality pattern \emph{does} hold. The shells are equal,
+and the holes are disequal both under \(\delta_1\) (\(\mathtt{1_2} \ne \mathtt{0_2}\)) and under \(\delta_2\) (\(\mathtt{0_2} \ne \mathtt{1_2}\)).
+\[ x \mapsto \texttt{(left \(\underline{\mathtt{0_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} \]
+Here \(|\sigma_1(\alpha)| = 2\) and \(\sigma_2(\alpha) = \texttt{Unit}\).
+This equality pattern \emph{does} hold. The shells are equal,
+and the holes are equal both under \(\delta_1\) (\(\mathtt{0_2} = \mathtt{0_2}\)) and under \(\delta_2\) (\(\texttt{sole} = \texttt{sole}\)).
+
+% talk about large-enough relation and counting type variable occurences, with sum-swap as example
+
+% brief explanation of compilation approach
+
+% work through two-valued type example
+
+
+
+
+
 \section{Non-monomorphizing semantics correctness}
 
 \begin{definition}
@@ -648,14 +755,6 @@ Which makes it easy to count for relations:
 	\end{align*}
 \end{definition}
 
-\begin{definition}
-	We define the \emph{size of type \(\tau\)}, notated \(|\tau|\), to be the number of values of type \(\tau\).
-	\(\tau\) is undefined when \(\tau\) contains a type variable.
-	\begin{align*}
-		|\tau| = | \den{\tau} |
-	\end{align*}
-\end{definition}
-
 \begin{lemma}
 	\label{lem:eqpat-extend}
 	Let \(\Delta \vdash v_1 : \sigma_1(\tau)\).
@@ -686,7 +785,7 @@ Which makes it easy to count for relations:
 \end{definition}
 
 \begin{theorem}
-	\label{thm:eqpat_weight}
+	\label{thm:eqpat-weight}
 	Let \(\Gamma; \Delta \vdash g \wt\), \(\delta_1 : \sigma_1(\Delta)\), \(\delta_2 : \sigma_2(\Delta)\),
 	and all relations in \(\gamma : \Gamma\) be large-enough.
 	If \(\delta_1 \eqpatD \delta_2\),
@@ -883,6 +982,7 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 \end{align*}
 
 \begin{theorem}
+	\label{thm:compile-poly}
 	Given any \(\gamma : \Gamma\) and \(\sigma\), large-enough \(R_{\sigma_1}\), \(\delta_1 : \Delta_1 =  \sigma_1(\Delta)\),
 	and \(\vec v\) satisfying \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), it follows:
 	\[ \den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma) = \den{\compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))})}(\gamma;\delta_1;\sigma) \]
@@ -921,4 +1021,12 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 		= (w + \dots) + (0 + \dots) = w + 0 = w
 	\]
 \end{proof}
+
+Theorem \ref{thm:compile-poly} assures us that compiled large-enough relation calls work as expected.
+Theorem \ref{thm:eqpat-weight} assures us that we can construct large-enough relations to begin with.
+In practice, not all polymorphic relations need to be large-enough.
+When possible, we prefer compiling relation calls as outlined here, but we can always resort to monomorphization when dealing with relation calls which are not large-enough.
+As such, this method is not truly "non-monomorphizing."
+That said, anecdotally many relation calls \emph{do} end up being large-enough; this method is non-monomorphizing "most of the time."
+
 \end{document}

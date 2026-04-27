@@ -6,13 +6,13 @@ outline:
     - minikanren
         - including tabling (vaguely bottom-up)
     - datalog
-    - pixel arrays
     - weighted logic langs
         - slpKanren
         - emKanren (weighted model counting)
         - probKanren
         - provenance semirings (datalog)
         - probabilistic logic langs
+    - pixel arrays
     - compiling to SAT
         - kodkod
     - monomorphizing bottom-up logic langs
@@ -65,9 +65,6 @@ outline:
         - count type variable occurences to find viable size, and why it works
         - has-disequality breaks, so need to monomorphize smaller relations
         - semiring addition needs to be idempotent to handle fresh, intuitively
-    - compiling to non-monomorphizing semantics
-        - unify_or_extract pattern var checks shells
-        - enforce_equality_pattern for holes
     - proofs
         - formal definition of shells and holes
         - lemma: values and shells with holes are bijection

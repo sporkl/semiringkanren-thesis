@@ -97,6 +97,18 @@
 	url={https://www.evandonahue.com/pdf/donahue_emkanren2022.pdf}
 }
 
+@incollection{donahue2023,
+  title={Goals as Constraints: Writing miniKanren Constraints in miniKanren},
+  author={Donahue, Evan},
+  journal={miniKanren and Relational Programming Workshop},
+  year={2023},
+  booktitle={Proceedings of the 2023 miniKanren and Relational Programming Workshop},
+  editor={Amin, Nada and Byrd, William E.},
+  pages={1-12},
+  year={2023},
+  address={Cambridge},
+  publisher={Harvard Technical Report}
+}
 @BOOK{riguzzi2022,
   title     = "Foundations of probabilistic logic programming",
   author    = "Riguzzi, Fabrizio",
@@ -229,3 +241,119 @@ abstract = {We introduce Mercury, a new purely declarative logic programming lan
 	doi = { https://doi.org/10.1007/BF01228882 }
 }
 
+@inproceedings{weixi2020,
+  title={Higher-order Logic Programming with $\lambda$ Kanren},
+  author={MA Weixi and Kuang-Chen Lu and Daniel P. Friedman},
+  year={2020},
+  url={https://minikanren.org/workshop/2020/minikanren-2020-paper4.pdf}
+}
+
+@InProceedings{felty1988,
+author="Felty, Amy
+and Gunter, Elsa
+and Hannan, John
+and Miller, Dale
+and Nadathur, Gopalan
+and Scedrov, Andre",
+editor="Lusk, Ewing
+and Overbeek, Ross",
+title="$\lambda$Prolog: An extended logic programming language",
+booktitle="9th International Conference on Automated Deduction",
+year="1988",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="754--755",
+isbn="978-3-540-39216-3"
+}
+
+@article{chiang2023,
+author = {Chiang, David and McDonald, Colin and Shan, Chung-chieh},
+title = {Exact Recursive Probabilistic Programming},
+year = {2023},
+issue_date = {April 2023},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {7},
+number = {OOPSLA1},
+url = {https://doi.org/10.1145/3586050},
+doi = {10.1145/3586050},
+abstract = {Recursive calls over recursive data are useful for generating probability distributions, and probabilistic programming allows computations over these distributions to be expressed in a modular and intuitive way. Exact inference is also useful, but unfortunately, existing probabilistic programming languages do not perform exact inference on recursive calls over recursive data, forcing programmers to code many applications manually. We introduce a probabilistic language in which a wide variety of recursion can be expressed naturally, and inference carried out exactly. For instance, probabilistic pushdown automata and their generalizations are easy to express, and polynomial-time parsing algorithms for them are derived automatically. We eliminate recursive data types using program transformations related to defunctionalization and refunctionalization. These transformations are assured correct by a linear type system, and a successful choice of transformations, if there is one, is guaranteed to be found by a greedy algorithm.},
+journal = {Proc. ACM Program. Lang.},
+month = apr,
+articleno = {98},
+numpages = {31},
+keywords = {linear types, probabilistic programming, recursive types}
+}
+
+@article{khamis2024,
+author = {Abo Khamis, Mahmoud and Ngo, Hung Q. and Pichler, Reinhard and Suciu, Dan and Wang, Yisu Remy},
+title = {Convergence of datalog over (Pre-) Semirings},
+year = {2024},
+issue_date = {April 2024},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {71},
+number = {2},
+issn = {0004-5411},
+url = {https://doi.org/10.1145/3643027},
+doi = {10.1145/3643027},
+abstract = {Recursive queries have been traditionally studied in the framework of datalog, a language that restricts recursion to monotone queries over sets, which is guaranteed to converge in polynomial time in the size of the input. But modern big data systems require recursive computations beyond the Boolean space. In this article, we study the convergence of datalog when it is interpreted over an arbitrary semiring. We consider an ordered semiring, define the semantics of a datalog program as a least fixpoint in this semiring, and study the number of steps required to reach that fixpoint, if ever. We identify algebraic properties of the semiring that correspond to certain convergence properties of datalog programs. Finally, we describe a class of ordered semirings on which one can use the semi-na\"{\i}ve evaluation algorithm on any datalog program.},
+journal = {J. ACM},
+month = apr,
+articleno = {8},
+numpages = {55},
+keywords = {Datalog, semirings, fixpoint}
+}
+
+@inproceedings{guo2023,
+author = {Guo, Xiangyu and Smith, James and Bansal, Ajay},
+title = {stableKanren: Integrating Stable Model Semantics with miniKanren},
+year = {2023},
+isbn = {9798400708121},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3610612.3610617},
+doi = {10.1145/3610612.3610617},
+abstract = {This paper presents stableKanren, a miniKanren extension with normal logic programming support under stable model semantics. MiniKanren is a relational programming solver implemented atop Scheme via shallow embedding, which means the predicate in each rule is encoded as a goal function directly. The solver utilizes the pattern matching macro in Scheme to transform the input goal function and form a static search stream through continuations to achieve the essential features, resolution and unification, in Prolog. However, the static stream only works on monotonic reasoning. Even though the core miniKanren is designed to be easily modified and extended with new features, none of the existing extensions support solving normal logic programs. Also, no normal logic program solvers are based on a functional programming language. We identify and categorize the roles of resolution and unification in top-down solving. And we realize that a dynamic search stream is needed to support non-monotonic reasoning. So we evolve both resolution and unification with new roles, and we exploit the advantages of using macros and continuations further to weave the information generated during runtime into future streams dynamically. We create multiple innovative macros to compile the normal logic program into a program with its complement form, obtain the domain of a variable under different contexts, and generate the new search stream during solving. And we use the coinductive resolution to handle the loop in the normal logic program. In future work, we plan to apply bottom-up optimization to improve our top-down system performance and support various input rules.},
+booktitle = {Proceedings of the 25th International Symposium on Principles and Practice of Declarative Programming},
+articleno = {5},
+numpages = {13},
+keywords = {functional programming, miniKanren, normal logic program solver, stable model semantics},
+location = {Lisboa, Portugal},
+series = {PPDP '23}
+}
+
+@inproceedings{grover1996,
+author = {Grover, Lov K.},
+title = {A fast quantum mechanical algorithm for database search},
+year = {1996},
+isbn = {0897917855},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/237814.237866},
+doi = {10.1145/237814.237866},
+booktitle = {Proceedings of the Twenty-Eighth Annual ACM Symposium on Theory of Computing},
+pages = {212–219},
+numpages = {8},
+location = {Philadelphia, Pennsylvania, USA},
+series = {STOC '96}
+}
+
+@article{ghorbani2025,
+author = {Ghorbani, Mahdi and Bauer, Emilien and Grosser, Tobias and Shaikhha, Amir},
+title = {Compressed and Parallelized Structured Tensor Algebra},
+year = {2025},
+issue_date = {April 2025},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {9},
+number = {OOPSLA1},
+url = {https://doi.org/10.1145/3720506},
+doi = {10.1145/3720506},
+abstract = {Tensor algebra is a crucial component for data-intensive workloads such as machine learning and scientific computing. As the complexity of data grows, scientists often encounter a dilemma between the highly specialized dense tensor algebra and efficient structure-aware algorithms provided by sparse tensor algebra. In this paper, we introduce DASTAC, a framework to propagate the tensors's captured high-level structure down to low-level code generation by incorporating techniques such as automatic data layout compression, polyhedral analysis, and affine code generation. Our methodology reduces memory footprint by automatically detecting the best data layout, heavily benefits from polyhedral optimizations, leverages further optimizations, and enables parallelization through MLIR. Through extensive experimentation, we show that DASTAC can compete if not significantly outperform specialized hand-tuned implementation by experts. We observe 0.16x - 44.83x and 1.37x - 243.78x speed-up for single- and multi-threaded cases, respectively.},
+journal = {Proc. ACM Program. Lang.},
+month = apr,
+articleno = {141},
+numpages = {29},
+keywords = {Barvinok Algorithm, Compiler Optimization, MLIR, Sparse Tensors}
+}

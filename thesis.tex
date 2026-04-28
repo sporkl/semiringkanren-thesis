@@ -128,6 +128,7 @@ Relational programming languages supporting parametric polymorphism include Flix
 Both of these languages use \emph{monomorphization} to implement polymorphism,
 which means generating a version of each function or relation for each type it gets called with.
 We also support parametric polymorphism in semiringKanren, but do so \emph{without} monomorphization---we believe this to be first for bottom-up relational programming languages.
+It is worth noting that Flix is also supports computing over arbitrary semirings.
 
 Datalog variants frequently exhibit ad-hoc polymorphism.
 We have already discussed how datalog programs that implement types as unary relations often exhibit a form of subtyping.
@@ -1189,6 +1190,120 @@ In practice, not all polymorphic relations need to be large-enough.
 When possible, we prefer compiling relation calls as outlined here, but we can always resort to monomorphization when dealing with relation calls which are not large-enough.
 As such, this method is not truly "non-monomorphizing."
 That said, anecdotally many relation calls \emph{do} end up being large-enough; this method is non-monomorphizing "most of the time."
+
+\chapter{Conclusions and Future Work}
+
+We have presented semiringKanren, a polymorphic bottom-up weighted relational programming language.
+This work builds on the state-of-the-art of relational programming in three ways:
+\begin{enumerate}
+	\item semiringKanren ihe first bottom-up variant of miniKanren.
+	\item semiringKanren compiles to SAT, which can significantly outperform the current top miniKanren implementations.
+	\item semiringKanren supports parametric polymorphism without monomorphization, a first for bottom-up relational languages.
+\end{enumerate}
+In particular, we present a denotational semantics for semiringKanren based on operations on multidimensional arrays with elements drawn from a commutative semiring.
+We show how arbitrary algebraic data types, including sum types, can be coerced to products of booleans, while still permitting the same operations and expressing the same values.
+From this, we show how semiringKanren programs over the boolean semiring can be straightforwardly compiled to SAT problems.
+Finally, we introduce the notions of \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations,
+and show how these can be used to compile polymorphic programs into non-polymorphic ones, with minimal monomorphization.
+
+We feel that the miniKanren approach to relational programming lends naturally to these developments.
+In particular, microKanren-style \(\texttt{conj}\) and \(\texttt{disj}\)-based syntax leads to a very straightforward denotational semantics and SAT translation.
+Furthermore, the flexibility to freely nest goals makes it straightforward to express the nontrivial patterns used when coercing sum types to booleans,
+or when compiling polymorphic programs into non-polymorphic ones.
+
+\section{Future Work}
+
+\subsection{Large-enough Relation Instances}
+
+In this work, we present a method of counting type variable occurrences to determine when a relation is large-enough, but acknowledge that it is not sufficient in all cases.
+It remains to find a fully-general method for calculating the necessary type variable sizes for a relation to be large-enough.
+As we have briefly discussed, such a method may involve relation calls providing information about their own argument size requirements during the calculation process.
+In order to handle recursive calls, a fixpoint process may me necessary (as it is in normal program execution).
+
+\subsection{Higher-order Relations}
+
+It is relatively rare for relational programming languages to support higher-order relations (relations which take other relations as arguments).
+Existing work in the space includes \(\lambda\)Prolog\cite{felty1988} and \(\lambda\)Kanren\cite{weixi2020}.
+
+With the \(\texttt{option-map}\) example, we have shown that higher-order relations can be encoded as products if they are used affinely (they can be called either zero times or once).
+It is not immediately clear how powerful this technique is.
+In particular, once a relation is encoded as a product, it may be possible to effectively duplicate it (likely using a new language construct) to get more calls.
+
+\subsection{Recursive Types}
+
+Thus far, semiringKanren does not support recursive types.
+This is very limiting.
+For example, semiringKanren cannot represent arbitrary lambda calculus terms and thus perform the traditional quine generation of miniKanren languages.
+In practice, recursive types should be able to be arbitrarily large, which seems incompatible with the finite array semantics semiringKanren currently uses.
+
+We are aware of three potential ways to bring recursive data types to semiringKanren.
+First, if semiringKanren gains full support for higher-order relations,
+it may become possible to express recursive types using Church-style encodings (given that semiringKanren already supports polymorphism).
+
+Secondly, we may be able to support \emph{gas-recursive types}, which are recursive types equipped with an additional size parameter.
+This may make it possible to calculate maximum sizes for types, so we can find an upper bound on the sizes of the relation arrays.
+This is analogous to the "vector" type common in dependently-typed programming languages, where the type holds a number corresponding to the length.
+
+Finally, it may be possible to use a system based on defunctionalization and refunctionalization to eliminate recursive data types, as in "Exact Recursive Probabilistic Programming"\cite{chiang2023}.
+From a preliminary investigation, it appears possible to translate the de/refunctionalized programs presented in that paper to semiringKanren.
+However, it remains to be seen if the approach fully generalizes to "derelationalization" and "rerelationalization" for arbitrary semiringKanren programs.
+
+\subsection{Semiring Fixpoint Convergence}
+
+It is not yet clear when semiringKanren programs terminate, and when they do not.
+Relatedly, it is not clear whether or not semiringKanren is Turing-complete.
+Of course, these sorts of characteristics may depend on the specific semiring in use.
+
+There is a large body of related work about datalog in the sphere.
+For example, it is known that the base datalog language always terminates and can express any polynomial-time algorithm\cite{madsen2020}, but this does not hold for many datalog variants.
+Datalog variants computing over provenance semirings are also known to terminate\cite{green2007}.
+It has been proven that certain algebraic properties of semirings correspond to convergence properties in datlog\cite{khamis2024}.
+It remains to see whether these hold for semiringKanren.
+
+Of particular interest is the ability to negate goals.
+For semirings which are also rings (have additive inverses), we can express "not" with \(\texttt{(factor -1)}\).
+For example, for the usual semiring over real numbers, we can express disequality as follows:
+\begin{align*}
+	& \texttt{(defrel (=/= (\(x : \alpha\)) (\(y : \alpha\)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad\quad \texttt{(factor 1)} \\
+	& \quad\quad \texttt{(conj} \\
+	& \quad\quad\quad \texttt{(factor -1)} \\
+	& \quad\quad\quad \texttt{(== \(x\) \(y\)))))} \\
+\end{align*}
+This roughly reads as "succeed always, but negate the success when \(x = y\)."
+Manually computing, this gives us an off-diagonal matrix as expected for \(\texttt{=/=}\).
+While this particular example terminates, programs with negation in general may not.
+It is also unclear what the "meaning" of negation is here.
+Relational programming languages supporting negation are uncommon, and use a variety of approaches.
+Negation has been implemented in Datalog using a three-valued semiring, and with "stratified" approaches (where different rules are evaluated at different times) to evaluation.
+Several miniKanren variants support \(\texttt{noto}\) goals, including stableKanren\cite{guo2023} which is based on stable model semantics,
+and minnaKanren\cite{donahue2023} which uses a system of constraints.
+
+\subsection{SMT Solving}
+
+We have shown that semiringKanren programs can be translated into SAT problems for efficient evaluation over the boolean semiring.
+We believe this approach can be extended to also use SMT solvers, for evaluation over other semirings.
+
+\subsection{Applications}
+
+It remains to see where semiringKanren may be effectively applied.
+We believe semiringKanren may be a strong fit for probabilistic modelling.
+It may also be worthwhile to explore existing applications of datalog, and see which may benefit from the greater expressivity of miniKanren-style syntax.
+
+\subsection{Alternative evaluation strategies}
+
+We have shown evaluation strategies for semiringKanren based on operations on semiring arrays, and translate to SAT problems.
+We believe there are several other evaluation strategies worth exploring.
+
+For semiringKanren's array-based evaluation, the arrays it uses are highly structured.
+The diagonal and off-diagonal arrays used for equality and disequality are a clear example.
+Thus, using dense arrays is likely an unnecessary use of space.
+There are methods which exploit these sorts of structures in arrays/tensors to enable parallelization and achieve significant speedups\cite{ghorbani2025}.
+Implementing a backend based on such a system may make larger problems and programs tractable for semiringKanren.
+
+We already have an practical method for compiling semiringKanren programs to SAT problems.
+We can compile boolean formulae into quantum circuits, thus we can use Grover's database search algorithm\cite{grover1996} to perform this evaluation.
 
 \printbibliography
 

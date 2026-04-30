@@ -243,9 +243,9 @@ However, semiringKanren can evaluate programs over any \(\texttt{commutative sem
 A commutative semiring is a set equipped with \(+\) and \(\times\) operations, both of which are commutative and associative and obey distributivity \(a \times (b + c) = (a \times b) + (a \times c)\).
 We also require this set to have a multiplicative identity \(1\), and an additive identity and multiplicative annihlator \(0\).
 Sometimes the term \emph{rig}, as in "ri\underline{n}g without \underline{n}egation," is used in this case.
-Besides the real numbers equipped with addition and multiplication \((\mathbb{R}, +, *,0,1\),
+Besides the real numbers equipped with addition and multiplication \((\mathbb{R}, +, *,0,1)\),
 other semirings include the \emph{boolean semiring}, equipped with logical "or" and logical "and" \((\mathbb{B},\vee,\wedge,\bot,\top)\),
-or the \emph{min-tropical semiring}: the real numbers and infinity equipped with minimum and addition \(\mathbb{R}^{\infty},\min,+,\infty,0)\).
+or the \emph{min-tropical semiring}: the real numbers and infinity equipped with minimum and addition \((\mathbb{R}^{\infty},\min,+,\infty,0)\).
 
 To consider the utility of different semirings, we present the exxample of transitive closure of a relation.
 Transitive closure can be thought of as "reachability by chaining."
@@ -312,7 +312,6 @@ When we evaluate this over the min-tropical semiring with \(w = 1\), we get the 
 \section{Syntax and Typing}
 
 \begin{figure}
-	\label{fig:semiringkanren-syntax}
 \[
 \begin{array}{lrcl}
 	\textrm{Programs} & P & ::= & \mathit{Rel}\dots \\
@@ -338,13 +337,13 @@ When we evaluate this over the min-tropical semiring with \(w = 1\), we get the 
 \end{array}
 \]
 	\caption{Syntax for semiringKanren.}
+	\label{fig:semiringkanren-syntax}
 \end{figure}
 
 We give the syntax of semiringKanren, ommitting some syntactic sugar, in figure \ref{fig:semiringkanren-syntax}.
 Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\texttt{fresh}\) can only introduce a single variable at a time.
 
 \begin{figure}
-	\label{fig:value-types}
 \begin{mathpar}
 	\infer{ }{
 		\Delta \vdash \texttt{sole} : \texttt{Unit}
@@ -380,10 +379,10 @@ Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\tex
 	}
 \end{mathpar}
 \caption{Inference rules for value typing judgement.}
+\label{fig:value-types}
 \end{figure}
 
 \begin{figure}
-\label{fig:goal-types}
 \begin{mathpar}
 	\infer{
 		\Gamma;\Delta \vdash g_1 \wt
@@ -436,10 +435,10 @@ Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\tex
 	}
 \end{mathpar}
 \caption{Inference rules for goal typing judgement.}
+\label{fig:goal-types}
 \end{figure}
 
 \begin{figure}
-\label{fig:relation-types}
 \begin{mathpar}
 	\infer{
 		\Gamma ;\vec x:\vec \tau \vdash g \wt
@@ -461,6 +460,7 @@ Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\tex
 	}
 \end{mathpar}
 \caption{Inference rules for relation and program typing judgements.}
+\label{fig:relation-types}
 \end{figure}
 
 The type system for semiringKanren is shown in figure \ref{fig:value-types} which shows the type system for values,
@@ -483,26 +483,99 @@ We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \
 \section{Semantics}
 
 \begin{figure}
-	\label{fig:types-semantics}
 \begin{align*}
 	\den{\texttt{Unit}} &= \{\texttt{sole}\} \\
 	\den{\texttt{(Sum \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(left \(v\))} \mid v \in \den{\tau_1}\} \cup \{\texttt{(right \(v\))} \mid v \in \den{\tau_2}\} \\
 	\den{\texttt{(Prod \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(pair \(v_1\) \(v_2\))} \mid v_1 \in \den{\tau_1}, v_2 \in \den{\tau_2}\} \\
 \end{align*}
 \caption{Denotational semantics for types.}
+\label{fig:types-semantics}
 \end{figure}
 
 Each type \(\tau\) denotes a finite set of values, as shown in figure \ref{fig:types-semantics}.
+We can use values as indices into an array.
+One way this can be done is by ordering the values lexicographically, then using their position in the list as an index drawn from \(\mathbb{N}\).
 
 \begin{definition}
 	We define the \emph{size of type \(\tau\)}, notated \(|\tau|\), to be the number of values of type \(\tau\).
-	\(\tau\) is undefined when \(\tau\) contains a type variable.
 	\begin{align*}
 		|\tau| = | \den{\tau} |
 	\end{align*}
 \end{definition}
 
-% TODO: add semantics
+\begin{figure}
+\begin{align*}
+	\den{\texttt{sole}} (\delta) &= \texttt{sole} \\
+	\den{\texttt{(left \(v\))}} (\delta) &= \texttt{(left \(\den{v} (\delta) \))} \\
+	\den{\texttt{(right \(v\))}} (\delta) &= \texttt{(right \(\den{v} (\delta) \))} \\
+	\den{\texttt{(pair \(v_1\) \(v_2\))}} (\delta) &= \texttt{(pair \(\den{v_1} (\delta) \) \(\den{v_2} (\delta)\))} \\
+	\den{x} (\delta) &= \delta(x)
+\end{align*}
+\caption{Denotational semantics for values.}
+\label{fig:values-semantics}
+\end{figure}
+
+The semantics for values, as shown in figure \ref{fig:values-semantics}, is similar to identity but substitutes variables where appropriate.
+We use the term \emph{concrete values} for values which do not include variables.
+The denotation for values turns arbitrary values (which may contain variables) into concrete values.
+To this end, we take a \emph{value environment} \(\delta\), consisting of entries of the form \(x \mapsto v\), where \(x\) is a variable name and \(v\) is a concrete value.
+For \(\delta\) to be valid, each entry \(x \mapsto v\) should have a corresponding type entry in \(\Delta\) where \(\Delta \vdash x : \tau\) and \(\cdot \vdash v : \tau\).
+In the denotational semantics for values, when we reach a variable, we apply \(\delta\) to get its concrete value.
+
+\begin{figure}
+\begin{align*}
+	\den{\texttt{(conj \(g_1\) \(g_2\))}} (\gamma;\delta) &= \den{g_1} (\gamma;\delta) \times \den{g_2} (\gamma;\delta) \\
+	\den{\texttt{(disj \(g_1\) \(g_2\))}} (\gamma;\delta) &= \den{g_1} (\gamma;\delta) + \den{g_2} (\gamma;\delta) \\
+	\den{\texttt{(fresh ((\(x : \tau\))) \(g\))}} (\gamma;\delta) &= \sum_{v \in \den{\tau}} \den{g} (\gamma;\delta,x \mapsto v) \\
+	\den{\texttt{(== \(v_1\) \(v_2\))}} (\gamma;\delta) &=
+	\begin{cases}
+		1 & \textrm{if } \den{v_1} (\delta) = \den{v_2} (\delta) \\
+		0 & \textrm{if } \den{v_1} (\delta) \ne \den{v_2} (\delta)
+	\end{cases} \\
+	\den{\texttt{(=/= \(v_1\) \(v_2\))}} (\gamma;\delta) &=
+	\begin{cases}
+		1 & \textrm{if } \den{v_1} (\delta) \ne \den{v_2} (\delta) \\
+		0 & \textrm{if } \den{v_1} (\delta) = \den{v_2} (\delta)
+	\end{cases} \\
+	\den{\texttt{(\(R\) \(\vec v\))}} (\gamma;\delta) &= \gamma(R)(\den{\vec v}(\delta))
+	\textrm{ where } \vec v : \vec\tau \\
+	\den{\texttt{(factor \(r\))}} (\gamma;\delta) &= r
+\end{align*}
+\caption{Denotational semantics for goals.}
+\label{fig:goals-semantics}
+\end{figure}
+
+The core semiringKanren semantics is that of goals.
+For the denotation of goals, we take a \emph{relation environment} \(\gamma\) mapping relation names to precomputed relations (whose types correspond to \(\Gamma\)), as well as a value environment \(\delta\).
+The relational environment \(\gamma\) is valid if for any \((R : \tau_1,\dots,\tau_n \to) \in \Gamma\),
+then the relation in \(\gamma\) corresponding to relation name \(R\) maps indices drawn from \(\den{\tau_1} \times \dots \times \den{\tau_n}\) to weights drawn from \(\mathbb{K}\).
+
+The denotation of goals as shown in figure \ref{fig:goals-semantics} computes a weight depending on the relation environment and current value environment.
+Goals can be understood as operating on arrays indexed by \(\delta\) and parameterized by \(\gamma\).
+For example, \(\texttt{conj}\) and \(\texttt{disj}\) correspond to element-wise multiplication and addition, and \(\texttt{(factor \(r\))}\) corresponds to producing an array with the constant \(r\) in every entry.
+When \(x\) and \(y\) are different variables, \(\texttt{(== \(x\) \(y\))}\) produces an array with ones along the diagonal corresponding to the \(x\) and \(y\) dimensions,
+and \(\texttt{(== \(x\) \(y\))}\) relatedly produces an array with ones on the off-diagonal and zeros along the diagonal.
+The \(\texttt{fresh}\) goal sums along one dimension of a rank-\((n + 1)\) array (corresponding to the dimension of the new variable) to produce a rank-\(n\) array.
+
+\begin{figure}
+\begin{gather*}
+	\den{\texttt{(defrel (\(R\) (\(\vec x : \vec \tau\)) g)}} (\gamma) =
+	(\vec i) \mapsto \den{g} (\gamma; \vec x \mapsto \den{\vec i};\sigma) \\
+	\den{\textit{Rel}_1, \dots, \textit{Rel}_Q} = \;
+	\mathrel{\textrm{fix}} \gamma \mathrel{\textrm{in}} R_1 \mapsto \den{\textit{Rel}_1} (\gamma), \dots, R_Q \mapsto \den{\textit{Rel}_Q} (\gamma)
+\end{gather*}
+\caption{Denotational semantics for relations and programs.}
+\label{fig:relation-semantics}
+\end{figure}
+
+We define the denotation of a relation to be a map from elements drawn from the types of its arguments, to weights.
+Thus, the elements of \(\gamma\) are precomputed relation denotations.
+We compute this denotation by evaluating the goal structure of the relation for all possible values inhabiting the argument types
+We now define the denotation of a complete program to be the least fixed point of the denotation of all relations.
+So we use \(\gamma\) to repeatedly compute the denotation of each relation to get a new \(\gamma\), and repeat this process until \(\gamma\) stabilizes.
+In practice, \(\gamma\) starts out consisting of relations which always fail.
+Then, the fixpointing process can be thought of as iteratively deriving new information about \(\gamma\).
+These semantics are shown in figure \ref{fig:relation-semantics}
 
 % \chapter{Boolean semiringKanren and SAT solving}
 
@@ -609,7 +682,6 @@ We expand the syntax and typing of minimal semiringKanren to support polymorphic
 We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}.
 
 \begin{figure}
-	\label{fig:poly-syntax}
 \[
 \begin{array}{lrcl}
 	\textrm{Programs} & P & ::= & \mathit{Rel}\dots \\
@@ -637,6 +709,7 @@ We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}
 \end{array}
 \]
 \caption{Syntax for polymorphic semiringKanren}
+\label{fig:poly-syntax}
 \end{figure}
 
 Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.

@@ -2,6 +2,17 @@
 outline:
 - abstract
 - introduction
+    - something about relational programming
+    - bottom-up evaluation and polymorphism are at odds
+    - this work
+        - introduces semiringKanren
+        - non-monomorphizing compilation scheme
+            - large-enough relations
+            - equality patterns
+            - proofs of correctness
+        - compares to related work
+            - particularly minikanren and datalog
+        - future work
 - prior work
     - minikanren
         - including tabling (vaguely bottom-up)

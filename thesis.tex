@@ -42,6 +42,40 @@
 
 \maketitle
 
+\chapter{Introduction}
+
+Relational programming (also known as logic programming) is arguably the most expressive and powerful paradigm for constructing computations.
+Where most languages express programs as sequences of instructions or mathematical functions, relational languages express programs with the full power of mathematical relations.
+Applications of relational programming languages include natural language processing\cite{madsen2020} and program generation\cite{byrd2012}, both of which can be difficult to express in other paradigms.
+
+Relational programming languages are usually implemented either via \emph{top-down} search, or \emph{bottom-up} fact collection.
+Top-down relational programming languages include Prolog and miniKanren; bottom-up relational languages include datalog and SQL.
+The top-down approach can effectively handle recursive data, but can also be prone to getting stuck searching an ineffectual branch.
+The bottom-up approach may not be able to handle recursive data, and may use space less efficiently, but has a much clearer semantics (especially for weighted relations) and can avoid many of the traps of top-down languages.
+
+For programming languages, \emph{polymorphism} is used to describe code that can operate on different types of data.
+When programmers want to processes different types of data in similar ways, polymorphism allows them to do so without manually re-writing similar code for each particular type.
+Polymorphism is generally classified as \emph{parametric} or \emph{ad-hoc}.
+In parametric polymorphism, unknwon types are expressed as \emph{type variables}, and direct operations on values of unknown types are prohibited.
+Ad-hoc polymorphism does allow operations, and these operations behave differently depending on the underlying types of the values.
+In this work, we focus on parametric polymorphism.
+
+The notion of a bottom-up polymorphic relational programming language can feel paradoxical.
+How can we collect facts like "\(x\) is related to \(y\)" when we do not know the domains \(x\) and \(y\) are drawn from?
+One approach might be to track which types for \(x\) and \(y\) are actually used in practice, and create versions of the relations specialized for those types.
+This approach is known as \emph{monomorphization}.
+However, this can substantially increase the size of programs, and does not generalize.
+What if we want to call a relation on new types, for which specialized relations have not yet been generated?
+
+In this work, we present semiringKanren, a bottom-up weighted relational programming language supporting polymorphism \emph{without} monomorphization.
+We begin by showcasing the base semiringKanren langauge, which does not support polymorphism, to build familiarity and establish the foundational concepts.
+We then demonstrate how the syntax and type system of this base language can be extended to support polymorphism.
+We briefly describe a monomorphizing semantics for this language, before introducing a non-monomorphizing compilation technique from the polymorphic language to the base language.
+In particular, we show how \emph{equality patterns} can be used to extract the underlying structure of \emph{large-enough relations} to handle polymorphic relation calls at different types.
+We conclude the section with correctness proofs of this approach.
+We compare semiringKanren with existing work, with a particular focus on other polymorphic bottom-up weighted relational languages.
+Finally, we consider areas for further exploration and development.
+
 \chapter{Related Work}
 
 \section{miniKanren}
@@ -90,8 +124,8 @@ Some datalog implementations may also support numeric types, such as integers or
 
 Datalog is not the only relational programming language that supports annotating facts with weights.
 In particular, there are several variants of miniKanren which support probabilistic logic.
-The slpKanren\cite{slpKanren} variant is based on stochastic logic, which generalizes stochastic grammars and requires disjunctions to be annotated with probabilities.
-The probKanren\cite{probKanren} variant allows probabilistically drawing variables from both continuous and discrete distributions,
+The slpKanren\cite{byrd2013} variant is based on stochastic logic, which generalizes stochastic grammars and requires disjunctions to be annotated with probabilities.
+The probKanren\cite{zinkov2021} variant allows probabilistically drawing variables from both continuous and discrete distributions,
 and performs probabilistic inference using a Sequential Monte Carlo method.
 There is also a variant based on weighted model counting\cite{donahue2022}, which tracks the likelihood of facts across several possible distributions.
 Of these variants, semiringKanren is most similar to slpKanren (when computing over the usual semiring for real numbers).
@@ -235,6 +269,11 @@ Otherwise, we go with the result of the first coin flip.
 \end{equation}
 Here, we use the \(\texttt{fresh}\) goal, which introduces \emph{fresh variables} and sums over the subgoal weights for each value the variables can take.
 We also use the disequality primitive relation \(\texttt{=/=}\), which tests that its arguments are not equal.
+
+The semiringKanren languages handles recursion by finding the \emph{least fixed point} of relations.
+This means it repeatedly evaluates each relation, using the weights from the previous evaluation each time there is a call.
+Throughout this process, relations gradually accumulate more information.
+We refer to this as \emph{bottom-up evaluation}.
 
 \subsection{Semirings}
 
@@ -576,8 +615,6 @@ So we use \(\gamma\) to repeatedly compute the denotation of each relation to ge
 In practice, \(\gamma\) starts out consisting of relations which always fail.
 Then, the fixpointing process can be thought of as iteratively deriving new information about \(\gamma\).
 These semantics are shown in figure \ref{fig:relation-semantics}
-
-% \chapter{Boolean semiringKanren and SAT solving}
 
 \chapter{Polymorphic semiringKanren}
 

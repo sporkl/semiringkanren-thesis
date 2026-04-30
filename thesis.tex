@@ -8,7 +8,10 @@
 \usepackage{hyperref}
 \usepackage[backend=bibtex]{biblatex}
 
-\title{Polymorphic bottom-up weighted relational programming}
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+
+\title{Polymorphic Bottom-up Weighted Relational Programming}
 \author{Dmitri Volkov}
 
 \addbibresource{bibliography.bib}
@@ -152,6 +155,345 @@ While our work is different, we also show that only a single monomorphic instanc
 
 \chapter{semiringKanren}
 
+Here, we provide an introduction to the semiringKanren language and the underlying principles.
+The semiringKanren language consists of relations defined in terms of goals, which may take in values corresponding to algebraic data types.
+Relations take arguments, and semiringKanren computes weights for every possible value assignment to arguments.
+
+The semiringKanren language as presented here differs from prior work\cite{volkov2025}.
+Rather than having primitive "constructor" relations, this version extends the value language allowed within unification and deunification.
+We believe this offers greater expressivity, and simplifies the implementation of algorithms occuring later in this work.
+
+\section{Example Programs}
+
+We introduce the semiringKanren language through examples.
+
+\subsection{Relations}
+
+In semiringKanren, programs are made up of relations, which in turn are made up of goals.
+Relations take zero or more typed argument variables, and either \emph{succeed} or \emph{fail} for each possible assignment of values to those variables.
+We use \(\texttt{defrel}\) to define new relations.
+\begin{equation}
+\begin{aligned}
+	& \texttt{(defrel (coin-flip (coin : (Sum Unit Unit)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad\quad \texttt{(== coin (left sole))} \\
+	& \quad\quad \texttt{(== coin (right sole))))} \\
+\end{aligned}
+\end{equation}
+Here, we define a relation \(\texttt{coin-flip}\) which takes a single argument of type \(\texttt{(Sum Unit Unit)}\).
+The type \(\texttt{(Sum Unit Unit)}\) has two values: \(\texttt{(left sole)}\) and \(\texttt{(right sole)}\).
+We use \(\texttt{(left sole)}\) to represent tails, and \(\texttt{(right sole)}\) to represent heads.
+This definition showcases two types of goals: the connective \(\texttt{disj}\) and the primitive relation \(\texttt{==}\).
+The \(\texttt{disj}\) goal succeeds when either of its subgoals succeeds.
+The primitive relation \(\texttt{==}\) succeeds when its two arguments are equal.
+Thus, this relation succeeds either when it is called with the argument \(\texttt{(left sole)}\), or with the argument \(\texttt{(right sole)}\).
+
+Note that many relational programming languages have a distinction between relations and \emph{queries} on those relations.
+This distinction is not neccesary in semiringKanren because relation evaluation already directly returns the satisfying argument values.
+
+\subsection{Weighted Relations}
+
+Beyond success and failure, semiringKanren relations can have different \emph{weights}.
+We can add weight to a program branch with the \(\texttt{factor}\) goal.
+We can modify the previous example to express a weighted unfair coin flip:
+\begin{equation}
+\begin{aligned}
+	& \texttt{(defrel (unfair-coin-flip (coin : (Sum Unit Unit)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad \quad \texttt{(conj (factor 0.7) (== coin (left sole)))} \\
+	& \quad \quad \texttt{(conj (factor 0.3) (== coin (right sole)))))} \\
+\end{aligned}
+\end{equation}
+We can think of \(\texttt{conj}\) as succeeding when both of its subgoals succeed.
+Success corresponds to a weight of \(1\), and failure corresponds to a weight of \(0\).
+When working with weights, \(\texttt{conj}\) generalizes to multiplication and \(\texttt{disj}\) generalizes to addition.
+Hence, this relation assigns the weight \(0.7\) to \(\texttt{(left sole)}\) (corresponding to heads), and the weight \(0.3\) to \(\texttt{(right sole)}\) (corresponding to tails).
+
+\subsection{Recursion}
+
+Within a relation, we can call other relations or even recursively call the current relation.
+For example, we can simulate a fair coin flip with unfair coins\cite{vonneumann1963}.
+For this process, we flip and unfair coin twice.
+If the two coin flips have the same result, we repeat the process.
+Otherwise, we go with the result of the first coin flip.
+\begin{equation}
+\begin{aligned}
+	& \texttt{(defrel (fair-coin-clip (coin : (Sum Unit Unit)))} \\
+	& \quad \texttt{(fresh ((coin1 : (Sum Unit Unit))} \\
+	& \quad\quad\quad\quad\quad\; \texttt{(coin2 : (Sum Unit Unit)))} \\
+	& \quad\quad \texttt{(conj} \\
+	& \quad\quad\quad \texttt{(unfair-coin-flip coin1)} \\
+	& \quad\quad\quad \texttt{(unfair-coin-flip coin2)} \\
+	& \quad\quad\quad \texttt{(disj} \\
+	& \quad\quad\quad\quad \texttt{(conj} \\
+	& \quad\quad\quad\quad\quad \texttt{(== coin1 coin2)} \\
+	& \quad\quad\quad\quad\quad \texttt{(fair-coin-flip coin)))} \\
+	& \quad\quad\quad\quad \texttt{(conj} \\
+	& \quad\quad\quad\quad\quad \texttt{(=/= coin1 coin2)} \\
+	& \quad\quad\quad\quad\quad \texttt{(== coin coin1)))))} \\
+\end{aligned}
+\end{equation}
+Here, we use the \(\texttt{fresh}\) goal, which introduces \emph{fresh variables} and sums over the subgoal weights for each value the variables can take.
+We also use the disequality primitive relation \(\texttt{=/=}\), which tests that its arguments are not equal.
+
+\subsection{Semirings}
+
+So far we have been working with the real numbers \(\mathbb{R}\), where \(\texttt{disj}\) corresponds to real number addition, and \(\texttt{conj}\) corresponds to real number multiplication.
+However, semiringKanren can evaluate programs over any \(\texttt{commutative semiring}\).
+A commutative semiring is a set equipped with \(+\) and \(\times\) operations, both of which are commutative and associative and obey distributivity \(a \times (b + c) = (a \times b) + (a \times c)\).
+We also require this set to have a multiplicative identity \(1\), and an additive identity and multiplicative annihlator \(0\).
+Sometimes the term \emph{rig}, as in "ri\underline{n}g without \underline{n}egation," is used in this case.
+Besides the real numbers equipped with addition and multiplication \((\mathbb{R}, +, *,0,1\),
+other semirings include the \emph{boolean semiring}, equipped with logical "or" and logical "and" \((\mathbb{B},\vee,\wedge,\bot,\top)\),
+or the \emph{min-tropical semiring}: the real numbers and infinity equipped with minimum and addition \(\mathbb{R}^{\infty},\min,+,\infty,0)\).
+
+To consider the utility of different semirings, we present the exxample of transitive closure of a relation.
+Transitive closure can be thought of as "reachability by chaining."
+Given a relation \(a \mathrel{R} b\), for each element \(x\), we want to find all \(y\) such that \(x \mathrel{R} \dots \mathrel{R} y\).
+We can represent the relation we want to process as a graph:
+\begin{center}
+    \begin{tikzpicture}[>=stealth]
+        \node (m) [matrix of nodes, column sep=3em] { 0 & 1 & 2 & 3 \\ };
+        \draw [->, bend left] (m-1-1) to (m-1-2);
+        \draw [->, bend left] (m-1-2) to (m-1-1);
+        \draw [->, bend left] (m-1-2) to (m-1-3);
+        \draw [<-, bend left] (m-1-3) to (m-1-4);
+    \end{tikzpicture}
+\end{center}
+Here, our relation operates on numbers \(0\) through \(3\).
+For convenience, we call this type \(4\), and represent the members of this type with \(\mathtt{0_4},\mathtt{1_4},\mathtt{1_4},\mathtt{3_4}\).
+In practice, we create this type using sum of four \(\texttt{Units}\).
+Assuming we give each edge in the graph some weight \(w\), we can write this relation in semiringKanren as follows:
+\begin{equation}
+\begin{aligned}
+	& \texttt{(defrel (graph ((x : 4) (y : 4)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad\quad \texttt{(conj (== x \(\mathtt{0_4}\)) (== y \(\mathtt{1_4}\)) (factor \(w\)))} \\
+	& \quad\quad \texttt{(conj (== x \(\mathtt{1_4}\)) (== y \(\mathtt{0_4}\)) (factor \(w\)))} \\
+	& \quad\quad \texttt{(conj (== x \(\mathtt{1_4}\)) (== y \(\mathtt{2_4}\)) (factor \(w\)))} \\
+	& \quad\quad \texttt{(conj (== x \(\mathtt{3_4}\)) (== y \(\mathtt{2_4}\)) (factor \(w\)))))} \\
+\end{aligned}
+\end{equation}
+We can now express reachability/transitive closure as a recursive relation: 
+\begin{equation}
+\begin{aligned}
+	& \texttt{(defrel (connect ((x : 4) (y : 4)))} \\
+	& \quad \texttt{(disj} \\
+	& \quad\quad \texttt{(graph x y)} \\
+	& \quad\quad \texttt{(fresh ((z : 4))} \\
+	& \quad\quad\quad \texttt{(conj} \\
+	& \quad\quad\quad\quad \texttt{(connect x z)} \\
+	& \quad\quad\quad\quad \texttt{(connect z y)))))} \\
+\end{aligned}
+\end{equation}
+When we evaluate this over the boolean semiring with \(w = \top\), we get reachability:
+\begin{center}
+	\begin{tabular}{l|cccc}
+		& \(y = \mathtt{0_4}\) & \(y = \mathtt{1_4}\) & \(y = \mathtt{2_4}\) & \(y = \mathtt{3_4}\) \\
+		\hline
+		\(x = \mathtt{0_4}\) &\(\top\) & \(\top\) & \(\top\) & \(\bot\) \\
+		\(x = \mathtt{1_4}\) &\(\top\) & \(\top\) & \(\top\) & \(\bot\) \\
+		\(x = \mathtt{2_4}\) &\(\bot\) & \(\bot\) & \(\bot\) & \(\bot\) \\
+		\(x = \mathtt{3_4}\) &\(\bot\) & \(\bot\) & \(\top\) & \(\bot\)
+	\end{tabular}
+\end{center}
+When we evaluate this over the min-tropical semiring with \(w = 1\), we get the shortest path lengths:
+\begin{center}
+	\begin{tabular}{l|cccc}
+		& \(y = \mathtt{0_4}\) & \(y = \mathtt{1_4}\) & \(y = \mathtt{2_4}\) & \(y = \mathtt{3_4}\) \\
+		\hline
+		\(x = \mathtt{0_4}\) &\(2\) & \(1\) & \(2\) & \(\infty\) \\
+		\(x = \mathtt{1_4}\) &\(1\) & \(2\) & \(1\) & \(\infty\) \\
+		\(x = \mathtt{2_4}\) &\(\infty\) & \(\infty\) & \(\infty\) & \(\infty\) \\
+		\(x = \mathtt{3_4}\) &\(\infty\) & \(\infty\) & \(1\) & \(\infty\)
+	\end{tabular}
+\end{center}
+
+\section{Syntax and Typing}
+
+\begin{figure}
+	\label{fig:semiringkanren-syntax}
+\[
+\begin{array}{lrcl}
+	\textrm{Programs} & P & ::= & \mathit{Rel}\dots \\
+	\textrm{Relations} & Rel & ::= & \texttt{(defrel (\(R\) (\(x:\tau\)) \(\dots\)) \(g\)) } \\
+	\textrm{Goals} & g & ::= & \texttt{(conj \(g\) \(g\))} \\
+	& & | & \texttt{(disj \(g\) \(g\))} \\
+	& & | & \texttt{(fresh ((\(x:\tau\)) \(\dots\)) \(g\))} \\
+	& & | & \texttt{(== \(v\) \(v\))} \\
+	& & | & \texttt{(=/= \(v\) \(v\))} \\
+	& & | & \texttt{(\(R\) \(v\) \(\dots\))} \\
+	& & | & \texttt{(factor \(k\))} \\
+	\textrm{Values} & v & ::= & \texttt{sole} \\
+	& & | & \texttt{(left\(_{\tau_1, \tau_2}\) \(v\))} \\
+	& & | & \texttt{(right\(_{\tau_1, \tau_2}\) \(v\))} \\
+	& & | & \texttt{(pair \(v\) \(v\))} \\
+	& & | & x \\
+	\textrm{Types} & \tau & ::= & \texttt{Unit} \\
+	& & | & \texttt{(Sum \(\tau_1\) \(\tau_2\))} \\
+	& & | & \texttt{(Pair \(\tau_1\) \(\tau_2\))} \\
+	\textrm{Relation names} & R & & \\
+	\textrm{Variables} & x,y,z & & \\
+	\textrm{Weights} & r & \in & \mathbb{K}
+\end{array}
+\]
+	\caption{Syntax for semiringKanren.}
+\end{figure}
+
+We give the syntax of semiringKanren, ommitting some syntactic sugar, in figure \ref{fig:semiringkanren-syntax}.
+Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\texttt{fresh}\) can only introduce a single variable at a time.
+
+\begin{figure}
+	\label{fig:value-types}
+\begin{mathpar}
+	\infer{ }{
+		\Delta \vdash \texttt{sole} : \texttt{Unit}
+	}
+	\and
+	\infer{
+		\Delta \vdash v : \tau_1
+	}
+	{
+		\Delta \vdash \texttt{(left\(_{\tau_1 + \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
+	}
+	\and
+	\infer{
+		\Delta \vdash v : \tau_2
+	}
+	{
+		\Delta \vdash \texttt{(right\(_{\tau_1 + \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
+	}
+	\and
+	\infer{
+		\Delta \vdash v_1 : \tau_1
+		\and
+		\Delta \vdash v_2 : \tau_2
+	}
+	{
+		\Delta \vdash \texttt{(pair \(v_1\) \(v_2\))} : \texttt{(Prod \(\tau_1\) \(\tau_2\))}
+	}
+	\and
+	\infer{
+	}
+	{
+		\Delta, x : \tau \vdash x : \tau
+	}
+\end{mathpar}
+\caption{Inference rules for value typing judgement.}
+\end{figure}
+
+\begin{figure}
+\label{fig:goal-types}
+\begin{mathpar}
+	\infer{
+		\Gamma;\Delta \vdash g_1 \wt
+		\and
+		\Gamma;\Delta \vdash g_2 \wt
+	}{
+		\Gamma;\Delta \vdash \texttt{(conj \(g_1\) \(g_2\))} \wt
+	}
+	\and
+	\infer{
+		\Gamma;\Delta \vdash g_1 \wt
+		\and
+		\Gamma;\Delta \vdash g_2 \wt
+	}{
+		\Gamma;\Delta \vdash \texttt{(disj \(g_1\) \(g_2\))} \wt
+	}
+	\and
+	\infer{
+		\tau \vt
+		\and
+		\Gamma;\Delta,x:\tau \vdash g \wt
+	}{
+		\Gamma;\Delta \vdash \texttt{(fresh ((\(x:\tau\))) \(g\))} \wt
+	}
+	\and
+	\infer{
+		\Delta \vdash v_1 : \tau
+		\and
+		\Delta \vdash v_2 : \tau
+	}{
+		\Gamma; \Delta \vdash \texttt{(== \(v_1\) \(v_2\))} \wt
+	}
+	\and
+	\infer{
+		\Delta \vdash v_1 : \tau
+		\and
+		\Delta \vdash v_2 : \tau
+	}{
+		\Gamma; \Delta \vdash \texttt{(=/= \(v_1\) \(v_2\))} \wt
+	}
+	\and
+	\infer{
+		\Delta \vdash \vec v : \vec \tau
+	}{
+		\Gamma, (R : \vec\tau \rightarrow); \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt
+	}
+	\and
+	\infer{ }{
+		\Gamma; \Delta \vdash \texttt{(factor \(r\))} \wt
+	}
+\end{mathpar}
+\caption{Inference rules for goal typing judgement.}
+\end{figure}
+
+\begin{figure}
+\label{fig:relation-types}
+\begin{mathpar}
+	\infer{
+		\Gamma ;\vec x:\vec \tau \vdash g \wt
+	}{
+		\Gamma \vdash \texttt{(defrel (\(R\) (\(\vec x : \vec \tau\))) \(g\)))} \wt
+	}
+	\and
+	\infer{
+		(R_1 : \vec \tau_1 \rightarrow), \dots, (R_N : \vec \tau_N \rightarrow) \vdash
+		\texttt{(defrel (\(R_1\) (\(\vec x_1 : \vec \tau_1\))) \(g_1\))} \wt
+		\\\\
+		\vdots
+		\\\\
+		(R_1 : \vec \tau_1 \rightarrow), \dots, (R_N : \vec \tau_N \rightarrow) \vdash
+		\texttt{(defrel (\(R_N\) (\(\vec x_N : \vec \tau_N\))) \(g_1\))} \wt
+	}{
+		\texttt{(defrel (\(R_1\) (\(\vec x_1:\vec \tau_1\))) \(g_1\)))}, \dots, \\\\
+		\texttt{(defrel (\(R_N\) (\(\vec x_N:\vec \tau_N\))) \(g_N\)))} \wt
+	}
+\end{mathpar}
+\caption{Inference rules for relation and program typing judgements.}
+\end{figure}
+
+The type system for semiringKanren is shown in figure \ref{fig:value-types} which shows the type system for values,
+figure \ref{fig:goal-types} which shows the type system for goals, and figure \ref{fig:relation-types} which shows the type system for relations and programs.
+For values, the typing judgement \(\Delta \vdash v : \tau\) means that the value \(v\) has type \(\tau\) under the value context \(\Delta\), which tracks the types of variables.
+Note that we annotated the \(\texttt{left}\) and \(\texttt{right}\) sum type constructors with full sum types, to disambiguate the larger type while type checking.
+In practice, this is not necessary.
+Each entry in \(\Delta\) has the form \(x : \tau\), where \(x\) is a variable (from either a relation argument, or \(\texttt{fresh}\)), and \(\tau\) is a type.
+For goals, we use the judgement \(\Gamma; \Delta \vdash g \wt\) to indicate that the goal \(g\) is well-typed under value context \(\Delta\) and relation context \(\Gamma\),
+which tracks the types of relations.
+Each entry in \(\Gamma\) has the form \((R : \tau_1, \dots, \tau_n \to)\) which indicates that the relation with name \(R\) takes \(n\) arguments, which have types \(\tau_1, \dots, \tau_n\).
+For relations, we use the similar judgement \(\Gamma \vdash Rel \wt\), ommitting the \(\Delta\) context because it is not yet needed (there are no variables to bind).
+For programs, where there is no larger context, we simply use \(P \wt\).
+
+Note that our relation typing judgement is "the relation is well-typed under a context" rather than "the relation has type \(\dots\)".
+Relations are required to specify all needed typing information, so it only is necessary to check that their bodies are compatible.
+Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
+We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \; \dots \; (x_n : \tau_n)\), or similar.
+
+\section{Semantics}
+
+\begin{figure}
+	\label{fig:types-semantics}
+\begin{align*}
+	\den{\texttt{Unit}} &= \{\texttt{sole}\} \\
+	\den{\texttt{(Sum \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(left \(v\))} \mid v \in \den{\tau_1}\} \cup \{\texttt{(right \(v\))} \mid v \in \den{\tau_2}\} \\
+	\den{\texttt{(Prod \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(pair \(v_1\) \(v_2\))} \mid v_1 \in \den{\tau_1}, v_2 \in \den{\tau_2}\} \\
+\end{align*}
+\caption{Denotational semantics for types.}
+\end{figure}
+
+Each type \(\tau\) denotes a finite set of values, as shown in figure \ref{fig:types-semantics}.
+
 \begin{definition}
 	We define the \emph{size of type \(\tau\)}, notated \(|\tau|\), to be the number of values of type \(\tau\).
 	\(\tau\) is undefined when \(\tau\) contains a type variable.
@@ -159,6 +501,8 @@ While our work is different, we also show that only a single monomorphic instanc
 		|\tau| = | \den{\tau} |
 	\end{align*}
 \end{definition}
+
+% TODO: add semantics
 
 % \chapter{Boolean semiringKanren and SAT solving}
 
@@ -259,11 +603,13 @@ We first present the syntax and typing rules for semiringKanren extended with po
 Next, we provide a semantics for polymorphic semiringKanren based on monomorphization.
 Finally, we show how polymorphic relation calls can be compiled to use large-enough instances, and prove the correctness of this approach.
 
-\section{Syntax and typing}
+\section{Syntax and Typing}
 
 We expand the syntax and typing of minimal semiringKanren to support polymorphic relations.
+We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}.
 
 \begin{figure}
+	\label{fig:poly-syntax}
 \[
 \begin{array}{lrcl}
 	\textrm{Programs} & P & ::= & \mathit{Rel}\dots \\
@@ -290,6 +636,7 @@ We expand the syntax and typing of minimal semiringKanren to support polymorphic
 	\textrm{Weights} & r & \in & \mathbb{K}
 \end{array}
 \]
+\caption{Syntax for polymorphic semiringKanren}
 \end{figure}
 
 Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
@@ -302,14 +649,9 @@ As before, \(\Delta\) holds value typing judgements (of the form \(x:\tau\)).
 \(\Delta\) is also extended to hold judgements of the form \(\alpha : *\), indicating that the type variable \(\alpha\) can be treated as a valid type in the current context.
 In both cases, note that type variables may now appear in \(\tau\).
 
-Note that our relation typing judgement is "the relation is well-typed under a context" rather than "the relation has type \(\dots\)".
-Relations are required to specify all needed typing information, so it only is necessary to check that their bodies are compatible.
-Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
-Also note that in the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
-Finally, note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
-
-We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \; \dots \; (x_n : \tau_n)\), or similar.
-We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
+In the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
+Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
+Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
 
 \begin{figure}
 \begin{mathpar}
@@ -329,7 +671,7 @@ We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs some
 	\and
 	\infer{ }{\Delta,\alpha : * \vdash \alpha \vt}
 \end{mathpar}
-\caption{Inference rules f r type validity judgement.}
+\caption{Inference rules for type validity judgement.}
 \end{figure}
 
 \begin{figure}
@@ -342,14 +684,14 @@ We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs some
 		\Delta \vdash v : \tau_1
 	}
 	{
-		\Delta \vdash \texttt{(left\(_{\tau_1, \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
+		\Delta \vdash \texttt{(left\(_{\tau_1 + \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
 	}
 	\and
 	\infer{
 		\Delta \vdash v : \tau_2
 	}
 	{
-		\Delta \vdash \texttt{(right\(_{\tau_1, \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
+		\Delta \vdash \texttt{(right\(_{\tau_1 + \tau_2}\) \(v\))} : \texttt{(Sum \(\tau_1\) \(\tau_2\))}
 	}
 	\and
 	\infer{
@@ -414,8 +756,9 @@ We also use \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs some
 	}
 	\and
 	\infer{
+		\Delta \vdash \vec v : \vec \tau
 	}{
-		\Gamma, (R : \vec\tau \rightarrow); \Delta, \vec v : \sigma(\vec \tau) \vdash \texttt{(\(R\) \(\vec v\))} \wt
+		\Gamma, (R : \vec\tau \rightarrow); \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt
 	}
 	\and
 	\infer{ }{

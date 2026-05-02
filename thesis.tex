@@ -529,16 +529,22 @@ We introduce polymorphic relations by example.
 \subsection{Equal}
 
 Consider the following relation:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(defrel (equal (\(x : \alpha\)) (\(y : \alpha\)))} \\
 	& \quad \texttt{(== \(x\) \(y\)))}
-\end{align*}
+\end{aligned}
+\end{equation}
 This relation takes in two values of the same variable type, and checks that they are equal.
 We can call this relation at different types.
 For example, following call succeeds:
-\[ \texttt{(equal sole sole)} \]
+\begin{equation}
+	\texttt{(equal sole sole)} 
+\end{equation}
 while the following call fails:
-\[ \texttt{(equal (pair (left sole) (right sole)) (pair (right sole) (left sole)))} \]
+\begin{equation}
+	\texttt{(equal (pair (left sole) (right sole)) (pair (right sole) (left sole)))} 
+\end{equation}
 In the first example, \(\alpha\) gets mapped to the type \(\texttt{Unit}\)
 In the second example, \(\alpha\) gets mapped to the type \(\texttt{(Prod (Sum Unit Unit) (Sum Unit Unit))}\).
 Note that the primitive relations \(\texttt{==}\) and \(\texttt{=/=}\) are polymorphic, even in the base language;
@@ -547,7 +553,8 @@ they can operate on any type, including variable types, as long as both argument
 \subsection{Sum-Swap}
 
 Continuing to a larger example:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(defrel (sum-swap (\(x : \texttt{(Sum \(\alpha\) \(\beta\))}\)) (\(y : \texttt{(Sum \(\beta\) \(\alpha\))}\)))} \\
 	& \quad \texttt{(disj} \\
 	& \quad \quad \texttt{(fresh ((\(a : \alpha\)))} \\
@@ -558,20 +565,26 @@ Continuing to a larger example:
 	& \quad \quad \quad \texttt{(conj} \\
 	& \quad \quad \quad \quad \texttt{(== \(x\) (right \(b\)))} \\
 	& \quad \quad \quad \quad \texttt{(== \(y\) (left \(b\)))))))} \\
-\end{align*}
+\end{aligned}
+\end{equation}
 This relation replaces top-level \(\texttt{left}\)s in a sum type with \(\texttt{right}\)s, and vice versa.
 We can have multiple type variables, and include type variables within larger type structures.
 Assuming we call \(\texttt{sum-swap}\) with \(\alpha = \texttt{Unit}\) and \(\beta = \texttt{(Sum Unit Unit)}\),
-\[ \texttt{(sum-swap (left sole) \(q\))} \]
+\begin{equation}
+	\texttt{(sum-swap (left sole) \(q\))} 
+\end{equation}
 succeeds when \(q = \texttt{(right sole)}\), and
-\[ \texttt{(sum-swap (right (right sole)) \(q\))} \]
+\begin{equation}
+	\texttt{(sum-swap (right (right sole)) \(q\))} 
+\end{equation}
 succeeds when \(q = \texttt{(left (right sole))}\).
 When we have multiple type variables, they can be mapped to different types.
 
 \subsection{Option-Map}
 
 As a ``real-world'' motivating example, consider the following:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(defrel (option-map} \\
 	& \quad \texttt{(\(f : \texttt{(Prod \(\alpha\) \(\beta\))}\)) (\(x : \texttt{(Sum Unit \(\alpha\))}\)) (\(y : \texttt{(Sum Unit \(\beta\))}\)))} \\
 	& \quad \texttt{(disj} \\
@@ -583,35 +596,44 @@ As a ``real-world'' motivating example, consider the following:
 	& \quad \quad \quad \quad \texttt{(== \(x\) (right \(a\)))} \\
 	& \quad \quad \quad \quad \texttt{(== \(f\) (pair \(a\) \(b\)))} \\
 	& \quad \quad \quad \quad \texttt{(== \(y\) (right \(b\)))))))} \\
-\end{align*}
+\end{aligned}
+\end{equation}
 The type \(\texttt{(Sum Unit \(\alpha\))}\) can be thought of as an ``option type'' where \(\texttt{(right \(v\))}\) can be thought of carrying a value,
 and \(\texttt{(left sole)}\) can be though of not carrying a value, or ``null.''
 Functional analogs of \(\texttt{option-map}\) are common in typed functional programming languages when working with optional values.
 The relation \(\texttt{option-map}\) takes a relation call encoded as a pair, and applies it to the ``value'' part of \(x\) and \(y\) if possible.
 For example, \(\texttt{option-map}\) may be called as follows:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(fresh ((\(h : \texttt{(Sum Unit Unit)}\)) (\(k : \texttt{Sum Unit Unit}\)))} \\
 	& \quad \texttt{(conj} \\
 	& \quad \quad \texttt{(sum-swap \(h\) \(k\))} \\
 	& \quad \quad \texttt{(option-map (pair \(h\) \(k\)) (right (left sole)) \(q\))))}
-\end{align*}
+\end{aligned}
+\end{equation}
 Which would succeed for \(q = \texttt{(right (right sole))}\).
 Here, both \(\alpha\) and \(\beta\) are mapped to \(\texttt{(Sum Unit Unit)}\) within the \(\texttt{option-map}\) call.
 
 \subsection{Two-Valued}
 
 We present one more example:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(two-valued (\(x : \alpha\))} \\
 	& \quad \texttt{(fresh ((\(y : \alpha\)))} \\
 	& \quad \quad \texttt{(=/= \(x\) \(y\))))}
-\end{align*}
+\end{aligned}
+\end{equation}
 This relation succeeds when it can find a value of the argument's type disequal from the argument.
 For example, assuming \(\alpha\) gets mapped to \(\texttt{Sum Unit Unit}\) the following succeeds:
-\[\texttt{two-valued (left sole))}\]
+\begin{equation}
+	\texttt{(two-valued (left sole))}
+\end{equation}
 because it can find \(y\) with the value \(\texttt{(right sole)}\).
 However, consider calling \(\texttt{two-valued}\) with \(\alpha\) mapped to \(\texttt{Unit}\):
-\[\texttt{(two-valued sole)}\]
+\begin{equation}
+	\texttt{(two-valued sole)}
+\end{equation}
 This call fails, because the only value of type \(\texttt{Unit}\) is \(\texttt{sole}\), and \(\texttt{(=/= sole sole)}\) fails.
 Success/failure depends on the type of the argument of \(\texttt{two-value}\) rather than the value.
 
@@ -911,7 +933,8 @@ The semantics for relations and programs are given in figure \ref{fig:poly-relat
 
 In practice, semiringKanren avoids the need for monomorphization by using \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations.
 Let us revisit the \(\texttt{sum-swap}\) relation:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(defrel (sum-swap (\(x : \texttt{(Sum \(\alpha\) \(\beta\))}\)) (\(y : \texttt{(Sum \(\beta\) \(\alpha\))}\)))} \\
 	& \quad \texttt{(disj} \\
 	& \quad \quad \texttt{(fresh ((\(a : \alpha\)))} \\
@@ -922,9 +945,10 @@ Let us revisit the \(\texttt{sum-swap}\) relation:
 	& \quad \quad \quad \texttt{(conj} \\
 	& \quad \quad \quad \quad \texttt{(== \(x\) (right \(b\)))} \\
 	& \quad \quad \quad \quad \texttt{(== \(y\) (left \(b\)))))))} \\
-\end{align*}
+\end{aligned}
+\end{equation}
 When \(|\alpha| = 3\) and \(|\beta| = 3\), \(\texttt{sum-swap}\) is denoted as follows (vertical axis is \(x\), horizontal axis is \(y\)):
-\[
+\begin{equation}
 	\begin{bmatrix}
 		0 & 0 & 0 & 1 & 0 & 0 \\
 		0 & 0 & 0 & 0 & 1 & 0 \\
@@ -933,9 +957,9 @@ When \(|\alpha| = 3\) and \(|\beta| = 3\), \(\texttt{sum-swap}\) is denoted as f
 		0 & 1 & 0 & 0 & 0 & 0 \\
 		0 & 0 & 1 & 0 & 0 & 0
 	\end{bmatrix}
-\]
+\end{equation}
 When we keep \(|\alpha| = 3\) but change \(|\beta| = 4\), \(\texttt{sum-swap}\) is denoted as the slightly larger array:
-\[
+\begin{equation}
 	\begin{bmatrix}
 		0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 		0 & 0 & 0 & 0 & 0 & 1 & 0 \\
@@ -945,7 +969,7 @@ When we keep \(|\alpha| = 3\) but change \(|\beta| = 4\), \(\texttt{sum-swap}\) 
 		0 & 0 & 1 & 0 & 0 & 0 & 0 \\
 		0 & 0 & 0 & 1 & 0 & 0 & 0 \\
 	\end{bmatrix}
-\]
+\end{equation}
 Which clearly has a similar structure to the \(|\alpha|=|\beta|=3\) array: diagonal sub-matrices in the top right and bottom left corners, and zeros everywhere else.
 
 Now, imagine trying to reconstruct the second relation array from the first, only knowing its type signature.
@@ -975,21 +999,31 @@ We say that two value environments \(\delta_1, \delta_2\) have the same equality
 when they have the same shell, and when all equal pairs of holes of a type variable in \(\delta_1\) are also equal in \(\delta_2\) (and same for disequality).
 
 For example, consider \(\delta_1 = \sigma_1(\Delta)\) and \(\delta_2 = \sigma_2(\Delta)\), with \(\Delta\) as follows:
-\[\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}, y : \alpha\]
+\begin{equation}
+	\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}, y : \alpha
+\end{equation}
 We will present potential equality patterns of the form \(\delta_1 \eqpatD \delta_2\), and explain why they do or do not hold.
 We underline holes for illustration.
 First consider:
-\[ x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} \eqpatD x \mapsto \texttt{(right \underline{sole})}, y \mapsto \texttt{\underline{sole}} \]
+\begin{equation}
+	x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} \eqpatD x \mapsto \texttt{(right \underline{sole})}, y \mapsto \texttt{\underline{sole}} 
+\end{equation}
 Here \(\alpha = \texttt{Unit}\) for both \(\delta_1\) and \(\delta_2\).
 This equality pattern does \emph{not} hold, because the shells of \(x\), \(\texttt{(left \(\dots\))}\) and \(\texttt{(right \(\dots\))}\), are not equal.
-\[ x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{1_2}} \]
+\begin{equation}
+	x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{1_2}} 
+\end{equation}
 Here \(|\alpha| = 2\).
 This equality pattern does \emph{not} hold, because the holes are disequal under \(\delta_1\) (\(\mathtt{1_2} \ne \mathtt{0_2}\)), but equal under \(\delta_2\) (\(\mathtt{1_2} = \mathtt{1_2}\)).
-\[ x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \(\underline{\mathtt{0_2}}\))}, y \mapsto \mathtt{\underline{1_2}} \]
+\begin{equation}
+	x \mapsto \texttt{(left \(\underline{\mathtt{1_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \(\underline{\mathtt{0_2}}\))}, y \mapsto \mathtt{\underline{1_2}} 
+\end{equation}
 Here again \(|\alpha| = 2\).
 This equality pattern \emph{does} hold. The shells are equal,
 and the holes are disequal both under \(\delta_1\) (\(\mathtt{1_2} \ne \mathtt{0_2}\)) and under \(\delta_2\) (\(\mathtt{0_2} \ne \mathtt{1_2}\)).
-\[ x \mapsto \texttt{(left \(\underline{\mathtt{0_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} \]
+\begin{equation}
+	x \mapsto \texttt{(left \(\underline{\mathtt{0_2}}\))}, y \mapsto \mathtt{\underline{0_2}} \eqpatD x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} 
+\end{equation}
 Here \(|\sigma_1(\alpha)| = 2\) and \(\sigma_2(\alpha) = \texttt{Unit}\).
 This equality pattern \emph{does} hold. The shells are equal,
 and the holes are equal both under \(\delta_1\) (\(\mathtt{0_2} = \mathtt{0_2}\)) and under \(\delta_2\) (\(\texttt{sole} = \texttt{sole}\)).
@@ -998,19 +1032,27 @@ and the holes are equal both under \(\delta_1\) (\(\mathtt{0_2} = \mathtt{0_2}\)
 
 For \(\texttt{sum-swap}\), we have determined that we can reproduce a call with \(|\alpha| = 3, |\beta| = 4\) using an array corresponding to type variable sizes \(|\alpha| = 3, |\beta| = 3\).
 Now we aim to do similar for \(\texttt{two-valued}\):
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(two-valued (\(x : \alpha\))} \\
 	& \quad \texttt{(fresh ((\(y : \alpha\)))} \\
 	& \quad \quad \texttt{(=/= \(x\) \(y\))))}
-\end{align*}
+\end{aligned}
+\end{equation}
 When \(|\alpha| = 2\), \(\texttt{two-valued}\) is denoted as follows:
-\[ \begin{bmatrix} 1 & 1 \end{bmatrix} \]
+\begin{equation}
+	\begin{bmatrix} 1 & 1 \end{bmatrix} 
+\end{equation}
 If we aim to use this to reproduce the array for \(\texttt{two-valued}\) when \(|\alpha| = 1\), no matter which entry we look in, we find the weight \(1\).
 Thus, the denotation we calculate for \(|\alpha| = 1\) is:
-\[ \begin{bmatrix} 1 \end{bmatrix} \]
+\begin{equation}
+	\begin{bmatrix} 1 \end{bmatrix} 
+\end{equation}
 which indicates success.
 But we have already established \(\texttt{(two-valued sole)}\) (which has \(|\alpha| = 1\)) should fail, meaning the correct denotation should be:
-\[ \begin{bmatrix} 0 \end{bmatrix} \]
+\begin{equation}
+	\begin{bmatrix} 0 \end{bmatrix} 
+\end{equation}
 
 To summarize, the expected behavior of \(\texttt{two-valued}\) is to fail when called with a value with type size \(1\), and succeed for any value with type size greater than \(1\).
 This means that we cannot use blindly the equality pattern technique everywhere.
@@ -1039,14 +1081,18 @@ Getting this to work involves some tricks.
 In particular, we require semiring addition (used in \(\texttt{disj}\) and \(\texttt{fresh}\)) to be idempotent.
 Intuitively, in the monomorphizing semantics, \(\texttt{fresh}\) may sum over different numbers of values, which could make goal weights depend on the size of type variables.
 For example, consider the following goal:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(fresh ((\(x  : \alpha\)))} \\
 	& \quad \texttt{(factor 1))}
-\end{align*}
+\end{aligned}
+\end{equation}
 The weight from this goal is a sum \(|\alpha|\) \(1\)s, and thus may depend on the size of \(\alpha\).
 This is something we are trying to avoid.
 When addition is idempotent, we instead have:
-\[ \den{\texttt{(fresh ((\(x : \alpha\))) (factor 1))}}(\dots) = 1 + \dots + 1 = 1 \]
+\begin{equation}
+	\den{\texttt{(fresh ((\(x : \alpha\))) (factor 1))}}(\dots) = 1 + \dots + 1 = 1 
+\end{equation}
 regardless of the size of \(\alpha\), because idempotence gives us \(1 + 1 = 1\).
 
 \section{Non-Monomorphizing Semantics Correctness}
@@ -1071,33 +1117,41 @@ and idempotent addition (so \(a + a = a\)).
 Shells are very similar to values, but additionally have holes which are associated with a single, non-composite type variable.
 
 Given a concrete value with a corresponding type (including type variables), we can find its shell as follows:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	\shell_\texttt{Unit}(\texttt{sole}) &= \texttt{sole} \\
 	\shell_\texttt{(Sum \(\tau_1\) \(\tau_2\))}(\texttt{(left \(v\))}) &= \texttt{(left \(\shell_{\tau_1}(v)\))} \\
 	\shell_\texttt{(Sum \(\tau_1\) \(\tau_2\))}(\texttt{(right \(v\))}) &= \texttt{(right \(\shell_{\tau_2}(v)\))} \\
 	\shell_\texttt{(Prod \(\tau_1\) \(\tau_2\))}(\texttt{(pair \(v_1\) \(v_2\))}) &= \texttt{(pair \(\shell_{\tau_1}(v_1)\) \(\shell_{\tau_2}(v_2)\))} \\
 	\shell_\alpha(v) &= \texttt{(hole \(\alpha\))}
-\end{align*}
+\end{aligned}
+\end{equation}
 
 We use \(\holes_{\alpha \in \tau}(v)\) to denote the values of the holes corresponding to type variable \(\alpha\) within type \(\tau\).
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	\holes_{\alpha \in \tau}(\texttt{sole}) &= \emptyset \\
 	\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(\texttt{(left \(v\))}) &= \holes_{\alpha \in \tau_1}(v) \\
 	\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(\texttt{(right \(v\))}) &= \holes_{\alpha \in \tau_2}(v) \\
 	\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(\texttt{(pair \(v_1\) \(v_2\))}) &= \holes_{\alpha \in \tau_1}(v_1), \holes_{\alpha \in \tau_2}(v_2) \\
 	\holes_{\alpha \in \alpha}(v) &= v \\
 	\holes_{\beta \in \alpha}(v) &= \emptyset
-\end{align*}
+\end{aligned}
+\end{equation}
 
 We also have versions of these functions which apply to \emph{value environments} (notated as \(\delta\) in the semantics) with corresponding type environments.
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	\envshell_{\emptyset}() &= \emptyset \\
 	\envshell_{\Delta, \tau}(\vec x \mapsto \vec v, x \mapsto v) &= \envshell_{\Delta}(\vec x \mapsto \vec v), x \mapsto \shell_{\tau}(v)
-\end{align*}
-\begin{align*}
+\end{aligned}
+\end{equation}
+\begin{equation}
+\begin{aligned}
 	\envholes_{\alpha \in \emptyset}() &= \emptyset \\
 	\envholes_{\Delta, \alpha \in \tau}(\vec x \mapsto \vec v, x \mapsto v) &= \envholes_{\alpha \in \Delta}(\vec v), \holes_{\alpha \in \tau}(v)
-\end{align*}
+\end{aligned}
+\end{equation}
 
 Note that extracted holes are not labeled; we can find the corresponding \texttt{(hole \(...\))} in the shell by an in-order search through the shell.
 
@@ -1108,8 +1162,12 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 \end{lemma}
 \begin{proof}
 	Assuming \(v_1 = v_2\), by substitution we trivially have:
-	\[\shell_\tau(v_1) = \shell_\tau(v_2)\]
-	\[\holes_\alpha(v_1) = \holes_\alpha(v_2) \; \forall \alpha \in \tau\]
+	\begin{equation}
+		\shell_\tau(v_1) = \shell_\tau(v_2)
+	\end{equation}
+	\begin{equation}
+		\holes_\alpha(v_1) = \holes_\alpha(v_2) \; \forall \alpha \in \tau
+	\end{equation}
 	Thus the \(\implies\) direction holds.
 
 	Now assume \(\shell_\tau(v_1) = \shell_\tau(v_2)\) and \(\holes_{\alpha \in \tau}(v_1) = \holes_{\alpha \in \tau}(v_2) \; \forall \alpha \in \tau\), and aim to show \(v_1 = v_2\).
@@ -1123,29 +1181,52 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 			This is only possible in two cases.
 			\begin{itemize}
 				\item Subcase: \(v_1 = \texttt{(left \(v_1'\))}\) and \(v_2 = \texttt{(left \(v_2'\))}\) where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\).
-					We know: \[\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\]
-					so we can deduce by definition: \[\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau\]
+					We know:
+					\begin{equation}
+						\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau
+					\end{equation}
+					so we can deduce by definition:
+					\begin{equation}
+						\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau
+					\end{equation}
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
 					Thus \(\texttt{(left \(v_1'\))} = \texttt{(left \(v_2'\))}\), and so \(v_1 = v_2\).
 				\item Subcase: \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\) where \(\shell_{\tau_2}(v_1') = \shell_{\tau_2}(v_2')\).
-					We know: \[\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau\]
-					so we can deduce by definition: \[\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau\]
+					We know:
+					\begin{equation}
+						\holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Sum \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \tau
+					\end{equation}
+					so we can deduce by definition:
+					\begin{equation}
+						\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau
+					\end{equation}
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
 					Thus \(\texttt{(right \(v_1'\))} = \texttt{(right \(v_2'\))}\), and so \(v_1 = v_2\).
 			\end{itemize}
 			In either case \(v_1 = v_2\).
 		\item Case: \(\tau = \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).
 			We have:
-			\[\shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2)\]
+			\begin{equation}
+				\shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \shell_{\texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2)
+			\end{equation}
 			This is only possible when \(v_1 = \texttt{(pair \(v_1'\) \(v_1''\))}\) and \(v_2 = \texttt{(pair \(v_2'\) \(v_2''\))}\),
 			where \(\shell_{\tau_1}(v_1') = \shell_{\tau_1}(v_2')\) and \(\shell_{\tau_2}(v_1'') = \shell_{\tau_2}(v_2'')\).
 			We also have:
-			\[\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}\]
-			By definition of \(\holes\), we therefore have: \[\holes_{\alpha \in \tau_1}(v_1'),\holes_{\alpha \in \tau_1}(v_1'') = \holes_{\alpha \in \tau_1}(v_2'),\holes_{\alpha \in \tau_1}(v_2'')\]
+			\begin{equation}
+				\holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_1) = \holes_{\alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}}(v_2) \; \forall \alpha \in \texttt{(Prod \(\tau_1\) \(\tau_2\))}
+			\end{equation}
+			By definition of \(\holes\), we therefore have:
+			\begin{equation}
+				\holes_{\alpha \in \tau_1}(v_1'),\holes_{\alpha \in \tau_1}(v_1'') = \holes_{\alpha \in \tau_1}(v_2'),\holes_{\alpha \in \tau_1}(v_2'')
+			\end{equation}
 			Because \(\shell_{\tau_1}(v'_1) = \shell_{\tau_1}(v'_2)\) and \(\shell_{\tau_2}(v''_1) = \shell_{\tau_2}(v''_2)\),
 			we can match up the locations of holes to deduce:
-			\[\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau_1\]
-			\[\holes_{\alpha \in \tau_2}(v_1'') = \holes_{\alpha \in \tau_2}(v_2'') \; \forall \alpha \in \tau_2\]
+			\begin{equation}
+				\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau_1
+			\end{equation}
+			\begin{equation}
+				\holes_{\alpha \in \tau_2}(v_1'') = \holes_{\alpha \in \tau_2}(v_2'') \; \forall \alpha \in \tau_2
+			\end{equation}
 			By the inductive hypothesis, we have \(v_1' = v_2'\) and \(v_1'' = v_2''\).
 			Thus, \(\texttt{(pair \(v_1'\) \(v_1''\))} = \texttt{(pair \(v_2'\) \(v_2''\))}\), and so \(v_1 = v_2\).
 		\item Case: \(\tau = \alpha\) (for any type variable).
@@ -1223,31 +1304,51 @@ The third condition boils down to ``if pairs of holes are equal for one value en
 	By transitivity of equality, we therefore know \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\).
 
 	For any \(\alpha \in \tau\) and valid index \(i\), we assert:
-	\[\holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i)\]
+	\begin{equation}
+		holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i)
+	\end{equation}
 	Because holes correspond to variable-typed values, and variable-typed values can only be constructed by by referencing variables in the environment,
 	we know the values of all holes under \(\delta_2\) must come from somewhere within \(\delta_2\).
 	Thus,
-	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \envholes_{\alpha \in \Delta}(\delta_2)(j_1) \]
-	\[ \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) = \envholes_{\alpha \in \Delta}(\delta_2)(j_2) \]
+	\begin{equation}
+		\holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \envholes_{\alpha \in \Delta}(\delta_2)(j_1) 
+	\end{equation}
+	\begin{equation}
+		\holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) = \envholes_{\alpha \in \Delta}(\delta_2)(j_2) 
+	\end{equation}
 	for some \(j_1, j_2\).
 	We can determine suitable \(j_1, j_2\) by figuring out which hole of which variable the left-hand side comes from,
 	and looking up the corresponding hole of the same variable on the right-hand side.
 	Because we have already shown that the shells are consistent across \(v_1, v_2\) and \(\delta_1, \delta_2\),
 	we can look up the values of the same holes under \(\delta_1\):
-	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))(i) = \envholes_{\alpha \in \Delta}(\delta_1)(j_1) \]
-	\[ \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))(i) = \envholes_{\alpha \in \Delta}(\delta_1)(j_2) \]
+	\begin{equation}
+		\holes_{\alpha \in \tau}(\den{v_1}(\delta_1))(i) = \envholes_{\alpha \in \Delta}(\delta_1)(j_1) 
+	\end{equation}
+	\begin{equation}
+		\holes_{\alpha \in \tau}(\den{v_2}(\delta_1))(i) = \envholes_{\alpha \in \Delta}(\delta_1)(j_2) 
+	\end{equation}
 	Because \(\den{v_1}(\delta_1) = \den{v_2}(\delta_2)\) by assumption, we therefore have:
-	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_1))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))(i) \]
+	\begin{equation}
+		\holes_{\alpha \in \tau}(\den{v_1}(\delta_1))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_1))(i) 
+	\end{equation}
 	and so:
-	\[ \envholes_{\alpha \in \Delta}(\delta_1)(j_1) = \envholes_{\alpha \in \Delta}(\delta_1)(j_2) \]
+	\begin{equation}
+		\envholes_{\alpha \in \Delta}(\delta_1)(j_1) = \envholes_{\alpha \in \Delta}(\delta_1)(j_2) 
+	\end{equation}
 	by transitivity of equality.
 	Because of this and \(\delta_1 \eqpatD \delta_2\), we therefore must also have:
-	\[ \envholes_{\alpha \in \Delta}(\delta_2)(j_1) = \envholes_{\alpha \in \Delta}(\delta_2)(j_2) \]
+	\begin{equation}
+		\envholes_{\alpha \in \Delta}(\delta_2)(j_1) = \envholes_{\alpha \in \Delta}(\delta_2)(j_2) 
+	\end{equation}
 	by definition of \(\eqpatD\).
 	Therefore by transitivity of equality:
-	\[ \holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) \]
+	\begin{equation}
+		\holes_{\alpha \in \tau}(\den{v_1}(\delta_2))(i) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2))(i) 
+	\end{equation}
 	This holds for any \(\alpha \in \tau\) and any valid index \(i\), so we have:
-	\[ \holes_{\alpha \in \Delta}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \Delta}(\den{v_2}(\delta_2))\]
+	\begin{equation}
+		\holes_{\alpha \in \Delta}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \Delta}(\den{v_2}(\delta_2))
+	\end{equation}
 
 	We have shown \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\) and
 	\(\holes_{\alpha \in \tau}(\den{v_1}(\delta_2)) = \holes_{\alpha \in \tau}(\den{v_2}(\delta_2) \; \forall \alpha \in \tau\).
@@ -1342,17 +1443,29 @@ Which makes it easy to count for relations:
 	\begin{itemize}
 		\item \(g = \texttt{(conj \(g_1\) \(g_2\))}\).
 			By the inductive hypothesis:
-			\[\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)\]
-			\[\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)\]
+			\begin{equation}
+				\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
+			\begin{equation}
+				\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
 			Thus:
-			\[\den{g_1}(\gamma; \delta_1; \sigma_1) * \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) * \den{g_2}(\gamma; \delta_2; \sigma_2)\],
+			\begin{equation}
+				\den{g_1}(\gamma; \delta_1; \sigma_1) * \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) * \den{g_2}(\gamma; \delta_2; \sigma_2)\
+			\end{equation}
 			and so \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(disj \(g_1\) \(g_2\))}\).
 			By the inductive hypothesis:
-			\[\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)\]
-			\[\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)\]
+			\begin{equation}
+				\den{g_1}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
+			\begin{equation}
+				\den{g_2}(\gamma; \delta_2; \sigma_2) = \den{g_2}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
 			Thus:
-			\[\den{g_1}(\gamma; \delta_1; \sigma_1) + \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) + \den{g_2}(\gamma; \delta_2; \sigma_2)\]
+			\begin{equation}
+				\den{g_1}(\gamma; \delta_1; \sigma_1) + \den{g_2}(\gamma; \delta_1; \sigma_1) = \den{g_1}(\gamma; \delta_2; \sigma_2) + \den{g_2}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
 			and so \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(fresh ((\(x : \tau\))) \(g'\))}\).
 			\(|\sigma_1(\alpha)| \ge \#_\alpha g(\Delta) \; \forall \alpha \in \Delta\), so \(|\sigma_1(\alpha)| \ge \#_\alpha g'(\Delta,\tau) \; \forall \alpha \in \Delta\).
@@ -1361,54 +1474,106 @@ Which makes it easy to count for relations:
 			Similarly, \(|\sigma_2(\alpha)| \ge \#_\alpha g'(\Delta,\tau) \; \forall \alpha \in \Delta\), so for any \(\sigma_2(\Delta) \vdash v_2 : \sigma_2(\tau)\),
 			there exists \(\sigma_1(\Delta) \vdash v_1 : \sigma_1(\tau)\) where \(\delta_1, x \mapsto v_1 \eqpat_{\Delta, \tau} \delta_2, x \mapsto v_2\).
 			Thus:
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = w_1 + \dots + w_n\]
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = w'_1 + \dots + w'_m\]
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = w_1 + \dots + w_n
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = w'_1 + \dots + w'_m
+			\end{equation}
 			where each weight \(w_1, \dots, w_n\) appears at least once in \(w'_1, \dots, w'_m\),
 			and each weight \(w'_1, \dots, w'_m\) appears at least once in \(w_1, \dots, w_n\).
 			Let \(r_1, \dots, r_k\) be the unique weights appearing in both sums.
 			We require the semiring to be commutative, so we can group identical weights together.
 			We therefore have:
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = (r_1 + \dots) + \dots + (r_k + \dots)\]
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = (r_1 + \dots\dots) + \dots + (r_k + \dots\dots)\]
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = (r_1 + \dots) + \dots + (r_k + \dots)
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = (r_1 + \dots\dots) + \dots + (r_k + \dots\dots)
+			\end{equation}
 			We require \(+\) to be idempotent.
 			Thus:
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = r_1 + \dots + r_k\]
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = r_1 + \dots + r_k\]
-			\[\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = \den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2)\]
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = r_1 + \dots + r_k
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2) = r_1 + \dots + r_k
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_1; \sigma_1) = \den{\texttt{(fresh ((\(x : \tau\))) \(g'\))}}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
 		\item \(g = \texttt{(== \(v_1\) \(v_2\))}\).
 			By lemma \ref{lem:eqpat-substitution}, we either have:
-			\[\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\]
-			\[\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\]
+			\begin{equation}
+				\den{v_1}(\delta_1) = \den{v_2}(\delta_1)
+			\end{equation}
+			\begin{equation}
+				\den{v_1}(\delta_2) = \den{v_2}(\delta_2)
+			\end{equation}
 			or
-			\[\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\]
-			\[\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\]
+			\begin{equation}
+				\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)
+			\end{equation}
+			\begin{equation}
+				\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)
+			\end{equation}
 			In the first case:
-			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\]
-			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\]
+			\begin{equation}
+				\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1
+			\end{equation}
 			In the second case:
-			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\]
-			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\]
+			\begin{equation}
+				\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0
+			\end{equation}
 			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(=/= \(v_1\) \(v_2\))}\).
 			By lemma \ref{lem:eqpat-substitution}, we either have
-			\[\den{v_1}(\delta_1) = \den{v_2}(\delta_1)\]
-			\[\den{v_1}(\delta_2) = \den{v_2}(\delta_2)\]
+			\begin{equation}
+				\den{v_1}(\delta_1) = \den{v_2}(\delta_1)
+			\end{equation}
+			\begin{equation}
+				\den{v_1}(\delta_2) = \den{v_2}(\delta_2)
+			\end{equation}
 			or
-			\[\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)\]
-			\[\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)\]
+			\begin{equation}
+				\den{v_1}(\delta_1) \ne \den{v_2}(\delta_1)
+			\end{equation}
+			\begin{equation}
+				\den{v_1}(\delta_2) \ne \den{v_2}(\delta_2)
+			\end{equation}
 			In the first case:
-			\[\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0\]
-			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0\]
+			\begin{equation}
+				\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 0
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 0
+			\end{equation}
 			In the second case:
-			\[\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1\]
-			\[\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1\]
+			\begin{equation}
+				\den{\texttt{(=/= \(v_1\) \(v_2\))}}(\gamma; \delta_1; \sigma_1) = 1
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(== \(v_1\) \(v_2\))}}(\gamma; \delta_2; \sigma_2) = 1
+			\end{equation}
 			In either case, \(\den{g}(\gamma; \delta_1; \sigma_1) = \den{g}(\gamma; \delta_2; \sigma_2)\).
 		\item \(g = \texttt{(\(R\) \(\vec v\))}\).
-			\[\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R_{\sigma'})(\den{\vec v}(\delta_1))\]
-			\[\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R_{\sigma''})(\den{\vec v}(\delta_2))\]
+			\begin{equation}
+				\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_1;\sigma_1) = \gamma(R_{\sigma'})(\den{\vec v}(\delta_1))
+			\end{equation}
+			\begin{equation}
+				\den{\texttt{(\(R\) \(\vec v\))}}(\gamma;\delta_2;\sigma_2) = \gamma(R_{\sigma''})(\den{\vec v}(\delta_2))
+			\end{equation}
 			By the hypothesis that all relations in \(\gamma\) are large-enough, and that \(\delta_1 \eqpatD \delta_2\), these are equivalent.
 		\item \(g = \texttt{(factor \(k\))}\).
-			\[\den{\texttt{(factor \(k\))}}(\gamma; \delta_1; \sigma_1) = k = \den{\texttt{(factor \(k\))}}(\gamma; \delta_2; \sigma_2)\]
+			\begin{equation}
+				\den{\texttt{(factor \(k\))}}(\gamma; \delta_1; \sigma_1) = k = \den{\texttt{(factor \(k\))}}(\gamma; \delta_2; \sigma_2)
+			\end{equation}
 	\end{itemize}
 \end{proof}
 
@@ -1436,7 +1601,8 @@ Let \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\), and \(\alp
 For convenience, assume \(\envshell\) and \(\envholes\) operate on type sub-environments like \(\Delta_1\), \(\Delta_2\)
 by extracting shells or all possible holes as values, written in terms of ancillary variables.
 In practice, this is handled manually.
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \enforceeqpatD(\Delta_1; \Delta_2) = \\
 	& \quad \texttt{(fresh (\textrm{ancillary variables for \(\envshell\) and \(\envholes\)})} \\
 	& \quad \quad \texttt{(conj }\\
@@ -1451,7 +1617,8 @@ In practice, this is handled manually.
 	& \quad \quad \quad \quad \quad \quad \texttt{(=/= \(\envholes_{\alpha \in \Delta}(\Delta_1)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_1)(j)\))} \\
 	& \quad \quad \quad \quad \quad \quad \texttt{(=/= \(\envholes_{\alpha \in \Delta}(\Delta_2)(i)\) \(\envholes_{\alpha \in \Delta}(\Delta_2)(j)\))))} \\
 	& \quad \quad \quad \dots \texttt{))}
-\end{align*}
+\end{aligned}
+\end{equation}
 
 Once we have ancillary variables to work with, the structure of the generated code directly mirrors the definition of \(\eqpatD\).
 First, we check that the \(\envshell\)s of the two sub-environments are equal.
@@ -1466,7 +1633,10 @@ Thus when it succeeds it has weight 1, which is the multiplicative identity, so 
 Overall, we can ignore this subgoal in our reasoning going forward, other than assuming that the environment has been properly deconstructed into ancillary variables.
 
 Similarly note that with how \(\envholes\) operates on type environments, it may process holes which are not valid given the current \(\envshell\) structure.
-For example, consider the type environment \[\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}\]
+For example, consider the type environment
+\begin{equation}
+	\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}
+\end{equation}
 where \(\sigma_1(\alpha) = \texttt{Unit}\).
 Then if \(\envshell_{\alpha \in \Delta}(\Delta_1) = \texttt{(left (hole \(\alpha\)))}\), the first \(\alpha\)-hole (at index \(0\) in \(\envholes_{\alpha \in \Delta}(\Delta_1)\)) is valid,
 whereas the second \(\alpha\)-hole (at index \(1\) in \(\envholes_{\alpha \in \Delta}(\Delta_1)\)) is not.
@@ -1485,16 +1655,29 @@ The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempoten
 	\label{lem:enforce_eqpat}
 	Let \(\delta_1 : \Delta_1 = \sigma_1(\Delta)\) and \(\delta_2 : \Delta_2 = \sigma_2(\Delta)\).
 	Then for any relation environment \(\gamma\) and type variable substitution \(\sigma\),
-	either: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\] and \(\delta_1 \eqpatD \delta_2\),
-	or \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 0\] and \(\delta_1 \not\eqpatD \delta_2\).
+	either:
+	\[
+		\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1
+	\]
+	and \(\delta_1 \eqpatD \delta_2\),
+	or
+	\[
+		\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 0
+	\]
+	and \(\delta_1 \not\eqpatD \delta_2\).
 \end{lemma}
 \begin{proof}
 	We either have \(\delta_1 \eqpatD \delta_2\), or \(\delta_1 \not\eqpatD \delta_2\).
 
-	First assume \(\delta_1 \eqpatD \delta_2\) and aim to show: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\]
+	First assume \(\delta_1 \eqpatD \delta_2\) and aim to show:
+	\begin{equation}
+		\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1
+	\end{equation}
 	\(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\),
 	so
-	\[\texttt{(== \(\envshell_{\Delta}(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))}\]
+	\begin{equation}
+		\texttt{(== \(\envshell_{\Delta}(\Delta_1)\) \(\envshell_{\Delta}(\Delta_2)\))}
+	\end{equation}
 	succeeds under \(\delta_1, \delta_2\).
 	Similarly, for any \(\alpha\), for any holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
 	and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_2)\),
@@ -1503,7 +1686,10 @@ The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempoten
 	We have also argued that deconstructing \(\Delta_1, \Delta_2\) into ancillary variables succeeds, and relatedly that we can ignore the outer \(\texttt{fresh}\).
 	Thus we have a conjunction of sub-goals of weight 1, which is the multiplicative identity, so the total weight is 1.
 
-	Now assume \(\delta_1 \not\eqpatD \delta_2\), and aim to show: \[\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1\]
+	Now assume \(\delta_1 \not\eqpatD \delta_2\), and aim to show:
+	\begin{equation}
+		\den{\enforceeqpatD(\Delta_1;\Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 1
+	\end{equation}
 	We know \(\Delta_1 = \sigma_1(\Delta)\) and \(\Delta_2 = \sigma_2(\Delta)\).
 	\(\delta_1 \eqpatD \delta_2\), so either \(\envshell_\Delta(\delta_1) \ne \envshell_\Delta(\delta_2)\),
 	or for some \(\alpha\) and holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
@@ -1512,7 +1698,9 @@ The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempoten
 	
 	In the first case, \(\envshell_\Delta(\delta_1) \ne \envshell_\Delta(\delta_2)\).
 	Thus the goal
-	\[\texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_\Delta(\Delta_2)\))}\]
+	\begin{equation}
+		\texttt{(== \(\envshell_\Delta(\Delta_1)\) \(\envshell_\Delta(\Delta_2)\))}
+	\end{equation}
 	fails under \(\delta_1, \delta_2\).
 	This corresponds to weight \(0\), which is a multiplicative annihilator.
 	Thus the outer \(\texttt{conj}\) has weight \(0\), and so the generated code has weight \(0\) under \(\delta_1, \delta_2\).
@@ -1533,13 +1721,15 @@ Let \(R_{\sigma_2}\) be the smallest large-enough monomorphic instance of \(R\).
 When \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\),
 we use the notation \(\vec{v}[\Delta_1 \mapsto \Delta_2]\) for replacing variables from sub-environment \(\Delta_1\) with corresponding variables from sub-environment \(\Delta_2\).
 Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as follows:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))}) = \\
 	& \quad \texttt{(fresh ((\(\delta_2 : \Delta_2 = \sigma_2(\Delta)\))) } \\
 	& \quad\quad \texttt{(conj} \\
 	& \quad\quad\quad \texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))} \\
 	& \quad\quad\quad \texttt{\(\enforceeqpatD(\Delta_1; \Delta_2)\)))} \\
-\end{align*}
+\end{aligned}
+\end{equation}
 
 \begin{theorem}
 	\label{thm:compile-poly}
@@ -1548,10 +1738,10 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 	\[ \den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma) = \den{\compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))})}(\gamma;\delta_1;\sigma) \]
 \end{theorem}
 \begin{proof}
-	Let \(w = \den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma)\) and aim to show :
-	\[
+	Let \(w = \den{\texttt{(\(R_{\sigma_1}\) \(\vec v\))}}(\gamma;\delta_1;\sigma)\) and aim to show:
+	\begin{equation}
 		\den{\compile(\texttt{(\(R_{\sigma_1}\) \(\vec v\))})}(\gamma;\delta_1;\sigma) = w
-	\]
+	\end{equation}
 
 	First consider subcases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) fails.
 	We know \(0\) is multiplicative annihilator, so these cases all result in weight \(0\).
@@ -1560,26 +1750,29 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 	Within the \(\texttt{fresh}\), our environment is \(\delta_1, \delta_2 : \Delta_1, \Delta_2\).
 	Because we assume \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds, by lemma \ref{lem:enforce_eqpat} we know \(\delta_1 \eqpatD \delta_2\).
 	From this, along \(R_{\sigma_1}\) and \(R_{\sigma_2}\) being large-enough by assumption/definition,
-	we know: \[\den{\texttt{(\(R_{\sigma_1}\) \(\vec{v}\))}}(\gamma;\delta_1;\sigma) = \den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_2;\sigma) = w\]
+	we know:
+	\begin{equation}
+		\den{\texttt{(\(R_{\sigma_1}\) \(\vec{v}\))}}(\gamma;\delta_1;\sigma) = \den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_2;\sigma) = w
+	\end{equation}
 	\(\vec{v}[\Delta_1 \mapsto \Delta_2]\) does not include any variables that occur in \(\delta_1\),
 	so the \(R_{\sigma_2}\) relation call has the same weight under the larger environment \(\delta_1, \delta_2\):
-	\[
+	\begin{equation}
 		\den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_2;\sigma)
 		= \den{\texttt{(\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\))}}(\gamma;\delta_1,\delta_2;\sigma)
 		= w
-	\]
+	\end{equation}
 	As mentioned, we assume the \(\enforceeqpatD\) call succeeds.
 	Thus:
-	\[
-		\den{\texttt{(conj (\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\)) \(\enforceeqpatD(\Delta_1; \Delta_2)\))}}(\gamma;\delta_1,\delta_2,\sigma)
+	\begin{multline}
+		\den{\texttt{(conj (\(R_{\sigma_2}\) \(\vec{v}[\Delta_1 \mapsto \Delta_2]\)) \(\enforceeqpatD(\Delta_1; \Delta_2)\))}}(\gamma;\delta_1,\delta_2,\sigma) \\
 		= w * 1 = w
-	\]
+	\end{multline}
 
 	Our outer fresh is a sum of \(0\)s and \(w\)s. Because our semiring is associative, has idempotent \(+\), and additive identity \(0\), we have:
-	\[
-		\den{\texttt{(fresh ((\(\delta_2 : \Delta_2 = \sigma_2(\Delta)\))) \(\dots\))}}(\gamma;\delta_1;\sigma)
+	\begin{multline}
+		\den{\texttt{(fresh ((\(\delta_2 : \Delta_2 = \sigma_2(\Delta)\))) \(\dots\))}}(\gamma;\delta_1;\sigma) \\
 		= (w + \dots) + (0 + \dots) = w + 0 = w
-	\]
+	\end{multline}
 \end{proof}
 
 Theorem \ref{thm:compile-poly} assures us that compiled large-enough relation calls work as expected.
@@ -1781,14 +1974,16 @@ It remains to see whether these hold for semiringKanren.
 Of particular interest is the ability to negate goals.
 For semirings which are also rings (have additive inverses), we can express ``not'' with \(\texttt{(factor -1)}\).
 For example, for the usual semiring over real numbers, we can express disequality as follows:
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 	& \texttt{(defrel (=/= (\(x : \alpha\)) (\(y : \alpha\)))} \\
 	& \quad \texttt{(disj} \\
 	& \quad\quad \texttt{(factor 1)} \\
 	& \quad\quad \texttt{(conj} \\
 	& \quad\quad\quad \texttt{(factor -1)} \\
 	& \quad\quad\quad \texttt{(== \(x\) \(y\)))))} \\
-\end{align*}
+\end{aligned}
+\end{equation}
 This roughly reads as ``succeed always, but negate the success when \(x = y\).''
 Manually computing, this gives us an off-diagonal matrix as expected for \(\texttt{=/=}\).
 While this particular example terminates, programs with negation in general may not.

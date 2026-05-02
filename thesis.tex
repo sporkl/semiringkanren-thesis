@@ -543,7 +543,11 @@ For example, following call succeeds:
 \end{equation}
 while the following call fails:
 \begin{equation}
-	\texttt{(equal (pair (left sole) (right sole)) (pair (right sole) (left sole)))} 
+\begin{aligned}
+	& \texttt{(equal}\\
+	& \quad \texttt{(pair (left sole) (right sole))} \\
+	& \quad \texttt{(pair (right sole) (left sole)))} \\
+\end{aligned}
 \end{equation}
 In the first example, \(\alpha\) gets mapped to the type \(\texttt{Unit}\)
 In the second example, \(\alpha\) gets mapped to the type \(\texttt{(Prod (Sum Unit Unit) (Sum Unit Unit))}\).
@@ -701,7 +705,7 @@ We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}
 	\infer{ }{\Delta,\alpha : * \vdash \alpha \vt}
 \end{mathpar}
 \caption{Inference rules for polymorphic type validity judgement.}
-	\label{fig:poly-type-valid}
+	\label{fig:poly-types-valid}
 \end{figure}
 
 \begin{figure}
@@ -1095,7 +1099,7 @@ When addition is idempotent, we instead have:
 \end{equation}
 regardless of the size of \(\alpha\), because idempotence gives us \(1 + 1 = 1\).
 
-\section{Non-Monomorphizing Semantics Correctness}
+\section{Proofs for Non-Monomorphizing Semantics}
 
 We now aim to prove that this compilation scheme works as intended.
 Throughout this section, we assume that we are working over a commutative semiring with multiplicative identity \(1\), additive identity and multiplicative annihlator \(0\),
@@ -1190,7 +1194,11 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 						\holes_{\alpha \in \tau_1}(v_1') = \holes_{\alpha \in \tau_1}(v_2') \; \forall \alpha \in \tau
 					\end{equation}
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
-					Thus \(\texttt{(left \(v_1'\))} = \texttt{(left \(v_2'\))}\), and so \(v_1 = v_2\).
+					Thus
+					\begin{equation}
+						\texttt{(left \(v_1'\))} = \texttt{(left \(v_2'\))}
+					\end{equation}
+					and so \(v_1 = v_2\).
 				\item Subcase: \(v_1 = \texttt{(right \(v_1'\))}\) and \(v_2 = \texttt{(right \(v_2'\))}\) where \(\shell_{\tau_2}(v_1') = \shell_{\tau_2}(v_2')\).
 					We know:
 					\begin{equation}
@@ -1201,7 +1209,11 @@ Note that extracted holes are not labeled; we can find the corresponding \texttt
 						\holes_{\alpha \in \tau_2}(v_1') = \holes_{\alpha \in \tau_2}(v_2') \; \forall \alpha \in \tau
 					\end{equation}
 					By the inductive hypothesis, we now know \(v_1' = v_2'\).
-					Thus \(\texttt{(right \(v_1'\))} = \texttt{(right \(v_2'\))}\), and so \(v_1 = v_2\).
+					Thus
+					\begin{equation}
+						\texttt{(right \(v_1'\))} = \texttt{(right \(v_2'\))}
+					\end{equation}
+					and so \(v_1 = v_2\).
 			\end{itemize}
 			In either case \(v_1 = v_2\).
 		\item Case: \(\tau = \texttt{(Prod \(\tau_1\) \(\tau_2\))}\).

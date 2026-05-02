@@ -1137,6 +1137,8 @@ We now aim to prove that this compilation scheme works as intended.
 Throughout this section, we assume that we are working over a commutative semiring with multiplicative identity \(1\), additive identity and multiplicative annihlator \(0\),
 and idempotent addition (so \(a + a = a\)).
 
+\subsection{Equality Patterns Preserve Weight}
+
 \begin{definition}
 	We define a \emph{shell} using the following grammar:
 	\[ \begin{array}{lrcl}
@@ -1502,6 +1504,8 @@ Also note that within the fixpoint process, all relations in \(\gamma\) start ou
 This theorem lets us conclude that each fixpoint iteration preserves arrays in \(\gamma\) being large-enough,
 as long as the goal definitions of the relations only include large-enough relation calls.
 
+\subsection{Compiling Polymorphic Relation Calls}
+
 We now aim to compile arbitrary large-enough relation calls to instead call the smallest large-enough relation.
 While it remains necessary to keep monomorphized relation instances for calls smaller than the smallest large-enough instance.
 this allows us to remove all monomorphized instances larger than the smallest large-enough instance.
@@ -1531,21 +1535,33 @@ In practice, this is handled manually.
 	& \quad \quad \quad \dots \texttt{))}
 \end{align*}
 
-Note that \(\envholes_{\alpha \in \Delta}(\Delta_1)\) may include holes that are not valid given the current structure of \(\envshell_\Delta(\Delta_1)\).
-Of course, similar applies for \(\Delta_2\).
-In these cases, no constraints are imposed on the corresponding ancillary variables during the deconstruction; they have no impact at this stage.
-For at least one concrete value environment, we know the \(\texttt{==}\) case of the \(\texttt{disj}\) is guaranteed to succeed.
-The \(\texttt{=/=}\) case may also succeed for some other value environment.
-In either case, this results in the weight \(1\) for the \(\texttt{disj}\) and therefore does not impact the weight of the outer \(\texttt{conj}\).
-Because we will still require \(+\) to be idempotent and commutative,
-the sum corresponding to the outer \(\texttt{fresh}\) for ancillary variables also does not change the overall weight when there are multiple such successes.
-Failures correspond to weight \(0\), which is the additive identity, so they also do not change the overall weight.
-So while we do have instances of the \(\texttt{disj}\) clause which operate on holes which do not "exist", they have no impact to the overall weight and can be ignored.
+Once we have ancillary variables to work with, the structure of the generated code directly mirrors the definition of \(\eqpatD\).
+First, we check that the \(\envshell\)s of the two sub-environments are equal.
+Then for each pair of holes, we check that either both pairs of holes are equal, or both pairs of holes are disequal.
 
-Similarly, deconstructing \(\Delta_1\) and \(\Delta_2\) into ancillary variables always succeeds for at least one assignment in the top-level \(\texttt{fresh}\),
-so we can treat it as a success and assume the ancillary variables have the correct values.
-Also note that when taking the denotation of a goal returned by \(\enforceeqpatD\), applying \(\sigma\) within the top level fresh is equivalent to identity,
-because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
+First note that deconstructing \(\Delta_1\) and \(\Delta_2\) into ancillary variables does not succeed
+when the ancillary variable values in the current environment do not match up with the current values inhabiting \(\Delta_1\) and \(\Delta_2\).
+When this happens, the whole \(\texttt{conj}\) fails, and so no weight is added into the summation corresponding to the  outer \(\texttt{fresh}\).
+This means that we can ignore these failing cases in our reasoning, and only consider cases where deconstructing \(\Delta_1\) and \(\Delta_2\) succeeds.
+The deconstruction process does not need to use \(\texttt{factor}\), so it either has weight 1 or 0 (this can easily be proven by induction over goals).
+Thus when it succeeds it has weight 1, which is the multiplicative identity, so it does not affect the weight of the top-level \(\texttt{conj}\).
+Overall, we can ignore this subgoal in our reasoning going forward, other than assuming that the environment has been properly deconstructed into ancillary variables.
+
+Similarly note that with how \(\envholes\) operates on type environments, it may process holes which are not valid given the current \(\envshell\) structure.
+For example, consider the type environment \[\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}\]
+where \(\sigma_1(\alpha) = \texttt{Unit}\).
+Then if \(\envshell_{\alpha \in \Delta}(\Delta_1) = \texttt{(left (hole \(\alpha\)))}\), the first \(\alpha\)-hole (at index \(0\) in \(\envholes_{\alpha \in \Delta}(\Delta_1)\)) is valid,
+whereas the second \(\alpha\)-hole (at index \(1\) in \(\envholes_{\alpha \in \Delta}(\Delta_1)\)) is not.
+This second \(\alpha\)-hole only exists in the shell \(\texttt{(right (hole \(\alpha\)))}\), which is not the current shell.
+
+In practice, this is not an issue.
+It simply means that during the deconstruction process, no constraints are imposed on the ancillary variables corresponding to these holes.
+While the "equality patterning" part of the generated code may fail for certain assignments of these ancillary variables,
+it is guaranteed to succeed for at least one assignment in the outer \(\texttt{fresh}\).
+It is clear that for any two variables of the same type, there must have at least one value for which they are equal.
+Nowhere in the generated code causes a failure for these "unconstrained" ancillary variables,
+so at least the first subcase of the equality patterning \(\texttt{disj}\) is guaranteed to succeed for at least one assignment.
+The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempotent and commutative, so if there are multiple such successes, the overall weight is not affected.
 
 \begin{lemma}
 	\label{lem:enforce_eqpat}
@@ -1591,7 +1607,7 @@ because \(\Delta_1\) and \(\Delta_2\) do not contain type variables.
 	In either case, if \(\delta_1 \not\eqpatD \delta_2\), then \(\den{\enforceeqpatD(\Delta_1; \Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 0\).
 \end{proof}
 
-Note that \(\gamma\) and \(\sigma\) are never applied in the generated code, so they have no effect on the final weight.
+Note that \(\gamma\) and \(\sigma\) are never applied in the generated code, so they have no affect on the final weight.
 
 We can now compile relation calls.
 Within context \(\gamma : \Gamma\), suppose that we want to compile large-enough  \(\texttt{(\(R_{\sigma_1}\) \(\vec v\))}\). 

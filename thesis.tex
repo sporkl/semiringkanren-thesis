@@ -42,11 +42,22 @@
 
 \maketitle
 
+\begin{abstract}
+	This work demonstrates a new approach for implementing polymorphism for bottom-up relational languages, without monomorphization.
+	We begin presenting the base semiringKanren language, a bottom-up weighted relational programming language.
+	We extend this base language to support polymorphism.
+	We describe a new method to compile polymorphic semiringKanren programs into non-polymorphic ones, based on equality patterns and large-enough polymorphic relation instances.
+	We prove the correctness of this method.
+	Finally, we consider existing work and suggest directions for future research.
+\end{abstract}
+
+\tableofcontents
+
 \chapter{Introduction}
 
 Relational programming (also known as logic programming) is arguably the most expressive and powerful paradigm for constructing computations.
 Where most languages express programs as sequences of instructions or mathematical functions, relational languages express programs with the full power of mathematical relations.
-Applications of relational programming languages include natural language processing\cite{madsen2020} and program generation\cite{byrd2012}, both of which can be difficult to express in other paradigms.
+Applications of relational programming languages include natural language processing\cite{mooney1997} and program generation\cite{byrd2012}, both of which can be difficult to express in other paradigms.
 
 Relational programming languages are usually implemented either via \emph{top-down} search, or \emph{bottom-up} fact collection.
 Top-down relational programming languages include Prolog and miniKanren; bottom-up relational languages include datalog and SQL.
@@ -1758,6 +1769,6 @@ Implementing a backend based on such a system may make larger problems and progr
 We already have an practical method for compiling semiringKanren programs to SAT problems.
 We can compile boolean formulae into quantum circuits, thus we can use Grover's database search algorithm\cite{grover1996} to perform this evaluation.
 
-\printbibliography
+\printbibliography[heading=bibintoc]
 
 \end{document}

@@ -652,20 +652,6 @@ We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}
 \label{fig:poly-syntax}
 \end{figure}
 
-Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
-We use \(\Delta \vdash v:\tau\) to denote the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
-The \(\Gamma;\Delta \vdash g \wt\) judgement denotes that the goal \(g\) is well-typed under the \(\Gamma\) and \(\Delta\) contexts.
-The \(\Gamma \vdash R \wt\) judgement denotes that the relation \(R\) is well-typed under the \(\Gamma\) context, and the \(P \wt\) judgement denotes that the entire program is well-typed.
-The \(\Delta \vdash \tau \vt\) judgement denotes that the type \(\tau\) is valid under the \(\Delta\) context.
-The judgements within the \(\Gamma\) context are extended to support type variables: \((R : \forall \alpha_1, \dots, \alpha_m . \tau_1,\dots,\tau_n \rightarrow)\).
-As before, \(\Delta\) holds value typing judgements (of the form \(x:\tau\)). 
-\(\Delta\) is also extended to hold judgements of the form \(\alpha : *\), indicating that the type variable \(\alpha\) can be treated as a valid type in the current context.
-In both cases, note that type variables may now appear in \(\tau\).
-
-In the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
-Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
-Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
-
 \begin{figure}
 \begin{mathpar}
 	\infer{ }{\Delta \vdash \texttt{Unit} \vt}
@@ -684,7 +670,8 @@ Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable
 	\and
 	\infer{ }{\Delta,\alpha : * \vdash \alpha \vt}
 \end{mathpar}
-\caption{Inference rules for type validity judgement.}
+\caption{Inference rules for polymorphic type validity judgement.}
+	\label{fig:poly-type-valid}
 \end{figure}
 
 \begin{figure}
@@ -723,7 +710,8 @@ Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable
 		\Delta, x : \tau \vdash x : \tau
 	}
 \end{mathpar}
-\caption{Inference rules for value typing judgement.}
+\caption{Inference rules for polymorphic value typing judgement.}
+	\label{fig:poly-value-types}
 \end{figure}
 
 \begin{figure}
@@ -778,7 +766,8 @@ Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable
 		\Gamma; \Delta \vdash \texttt{(factor \(r\))} \wt
 	}
 \end{mathpar}
-\caption{Inference rules for goal typing judgement.}
+\caption{Inference rules for polymorphic goal typing judgement.}
+	\label{fig:poly-goal-types}
 \end{figure}
 
 \begin{figure}
@@ -802,8 +791,25 @@ Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable
 		\texttt{(defrel (\(R_N\) \(\forall \vec \alpha_N\).(\(\vec x_N:\vec \tau_N\))) \(g_N\)))} \wt
 	}
 \end{mathpar}
-\caption{Inference rules for relation and program typing judgements.}
+\caption{Inference rules for polymorphic relation and program typing judgements.}
+	\label{fig:poly-relation-types}
 \end{figure}
+
+Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
+As before, we use \(\Delta \vdash v:\tau\) to denote the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
+The value typing judgement is shown in figure \ref{fig:poly-value-types}.
+The \(\Gamma;\Delta \vdash g \wt\) judgement denotes that the goal \(g\) is well-typed under the \(\Gamma\) and \(\Delta\) contexts, as shown in figure \ref{fig:poly-goal-types}.
+The \(\Gamma \vdash R \wt\) judgement denotes that the relation \(R\) is well-typed under the \(\Gamma\) context, and the \(P \wt\) judgement denotes that the entire program is well-typed.
+The relation and program typing judgements are shown in figure \ref{fig:poly-relation-types}.
+We introduce a new \(\Delta \vdash \tau \vt\) judgement (defined in figure \ref{fig:poly-types-valid}), which asserts that the type \(\tau\) is valid under the \(\Delta\) context.
+The judgements within the \(\Gamma\) context are extended to support type variables: \((R : \forall \alpha_1, \dots, \alpha_m . \tau_1,\dots,\tau_n \rightarrow)\).
+As before, \(\Delta\) holds value typing judgements (of the form \(x:\tau\)). 
+\(\Delta\) is also extended to hold judgements of the form \(\alpha : *\), indicating that the type variable \(\alpha\) can be treated as a valid type in the current context.
+In both cases, type variables may now appear in \(\tau\).
+
+In the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
+Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
+Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
 
 \section{Monomorphizing semantics}
 

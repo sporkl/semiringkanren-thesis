@@ -44,9 +44,9 @@
 
 \begin{abstract}
 	This work demonstrates a new approach for implementing polymorphism for bottom-up relational languages, without monomorphization.
-	We begin presenting the base semiringKanren language, a bottom-up weighted relational programming language.
+	We begin presenting semiringKanren, a bottom-up weighted relational programming language.
 	We extend this base language to support polymorphism.
-	We describe a new method to compile polymorphic semiringKanren programs into non-polymorphic ones, based on equality patterns and large-enough polymorphic relation instances.
+	We describe a new method to compile polymorphic semiringKanren programs into non-polymorphic ones, based on \emph{equality patterns} and \emph{large-enough} polymorphic relation instances.
 	We prove the correctness of this method.
 	Finally, we consider existing work and suggest directions for future research.
 \end{abstract}
@@ -86,6 +86,9 @@ In particular, we show how \emph{equality patterns} can be used to extract the u
 We conclude the section with correctness proofs of this approach.
 We compare semiringKanren with existing work, with a particular focus on other polymorphic bottom-up weighted relational languages.
 Finally, we consider areas for further exploration and development.
+
+We believe that this new approach to polymorphism can offer improvements in the broader space of relational programming.
+In particular, we hope it may offer efficiency gains, and enable "separate evalaution" of polymorphic programs.
 
 \chapter{semiringKanren}
 
@@ -1690,10 +1693,13 @@ We show how these semantics can be extended to support polymorphism.
 Finally, we introduce the notions of \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations,
 and show how these can be used to compile polymorphic programs into non-polymorphic ones, with minimal monomorphization.
 
-% TODO: revise this paragraph for a more satisfying conclusion
 We feel that the miniKanren approach to relational programming lends naturally to these developments.
 In particular, microKanren-style \(\texttt{conj}\) and \(\texttt{disj}\)-based syntax leads to a very straightforward denotational semantics.
 Furthermore, the flexibility to freely nest goals makes it straightforward to express the nontrivial patterns used when compiling polymorphic programs into non-polymorphic ones.
+
+We hope our new method of implementing polymorphism may find applications in relational languages beyond semiringKanren.
+We believe it may offer efficiency gains for polymorphic programs by reducing the need to recalculate the same relation at different types.
+We also believe it can help enable "separate evaluation" of programs, so that relations can be pre-computed and reused without reevaluation.
 
 The OCaml implementation of semiringKanren is available on GitHub\footnote{semiringKanren repository: \url{https://github.com/sporkl/semiringkanren}}.
 
@@ -1788,8 +1794,8 @@ Thus, using dense arrays is likely an unnecessary use of space.
 There are methods which exploit these sorts of structures in arrays/tensors to enable parallelization and achieve significant speedups\cite{ghorbani2025}.
 Implementing a backend based on such a system may make larger problems and programs tractable for semiringKanren.
 
-We already have an practical method for compiling semiringKanren programs to SAT problems.
-We can compile boolean formulae into quantum circuits, thus we can use Grover's database search algorithm\cite{grover1996} to perform this evaluation.
+We already have an practical method for compiling semiringKanren programs to SAT problems\cite{volkov2025}.
+We can compile boolean formulas into quantum circuits, thus we can use Grover's database search algorithm\cite{grover1996} to perform this evaluation.
 
 \printbibliography[heading=bibintoc]
 

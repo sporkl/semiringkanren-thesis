@@ -87,117 +87,6 @@ We conclude the section with correctness proofs of this approach.
 We compare semiringKanren with existing work, with a particular focus on other polymorphic bottom-up weighted relational languages.
 Finally, we consider areas for further exploration and development.
 
-\chapter{Related Work}
-
-\section{miniKanren}
-
-The miniKanren\cite{byrd2012} family of languages consists of relational programming languages which are often shallowly-embedded within a host language (such as Scheme).
-Relations in miniKanren are defined in terms of \emph{goals}, which usually include: value unification, fresh variable introduction, and program branching.
-Languages in the miniKanren family often excel at code generation based on relational interpreters, with quine generation being a particularly compelling example.
-As the name may imply, semiringKanren draws extensive inspiration from miniKanren.
-In particular, semiringKanren draws most of its concrete syntax from the the microKanren\cite{hemann2023} variant.
-
-One major difference between semiringKanren and miniKanren is that semiringKanren programs are typed, whereas miniKanren programs are untyped.
-That said, typed variants of miniKanren do exist, such as OCanren\cite{kosarev2018} and typedKanren\cite{kudasov2024}.
-
-Some variants of miniKanren support constraints.
-In particular, type constraints such as \(\texttt{symbolo}\) and \(\texttt{numbero}\),
-and disequality constraints (usually notated with \(\texttt{=/=}\)) are relatively common.
-Values in semiringKanren are typed, so semiringKanren avoids the need for specific type constraints.
-Disequality constraints are supported by semiringKanren, and are considerably easier to implement than in other miniKanren variants.
-
-Implementations of miniKanren are usually based on top-down searches based on filtering and combining streams of potential solutions.
-With semiringKanren, we use a different approach based on bottom-up fact generation, where new facts are gradually derived from existing ones.
-
-As of writing, semiringKanren does not support recursive data types, and therefore has not yet demonstrated the ability to generate quines.
-
-\section{Datalog}
-
-Datalog\cite{green2007} is a family of relational programming languages based on finding the \emph{least fixed point} of a database of facts.
-Relations in datalog are defined in terms of Horn clauses (disjunctions of conditions which are used to determine a fact).
-Datalog queries are executed by repeatedly deriving new facts using these clauses until no new facts are derived, in a process referred to as \emph{bottom-up evaluation}.
-This has the advantage of being able to compute queries which may not terminate in top-down relational languages.
-The execution model of semiringKanren is directly based on this bottom-up approach.
-
-While many models of relational algebra are boolean (relations either hold or do not), some datalog variants introduce the concept of \emph{annotated relations}.
-These generalize relations to \(K\)-relations, where facts are annotated with elements from a commutative semiring (a set with multiplication and addition operations, where multiplication distributes over addition).
-These annotations can be used to represent, for example, bag relations (where a fact may occur multiple times), or probabilistic databases (where facts may occur with some probability).
-In particular, it is common to use these annotations to track \emph{provenance}, or the reasoning behind the derivation of each fact.
-The implementation of semiringKanren is designed to support computation over any valid semiring.
-
-Traditionally, datalog has only a string or symbol type.
-Other types are constructed by defining unary relations which only succeed for a subset of symbol values\cite{fruhwirth1991}.
-In particular, this permits subtyping relations.
-This differs from semiringKanren, which uses algebraic data types.
-Some datalog implementations may also support numeric types, such as integers or floating-point numbers.
-
-\section{Weighted Logic Languages}
-
-Datalog is not the only relational programming language that supports annotating facts with weights.
-In particular, there are several variants of miniKanren which support probabilistic logic.
-The slpKanren\cite{byrd2013} variant is based on stochastic logic, which generalizes stochastic grammars and requires disjunctions to be annotated with probabilities.
-The probKanren\cite{zinkov2021} variant allows probabilistically drawing variables from both continuous and discrete distributions,
-and performs probabilistic inference using a Sequential Monte Carlo method.
-There is also a variant based on weighted model counting\cite{donahue2022}, which tracks the likelihood of facts across several possible distributions.
-Of these variants, semiringKanren is most similar to slpKanren (when computing over the usual semiring for real numbers).
-
-Probabilistic logic programming has also been widely explore outside of the miniKanren family of languages\cite{riguzzi2022}.
-Probabilistic variants of Prolog include ProbLog, Probabilistic Horn Abduction/Independent Choice Logic, and PRISM,
-all of which are based on annotating disjunctions with probabilities, and have the same expressive power.
-Bayesian Logic Programs, CLP(BN), and the Prolog Factor language are other probabilistic Prolog variants.
-
-\section{Pixel Arrays}
-
-Pixel arrays\cite{spivak2017} are a method of approximating solutions to nonlinear systems of equations.
-Broadly, the equations are first discretized, then plotted in arrays.
-Then, a generalized form of matrix multiplication to combine these arrays to reach a final result.
-More specifically, it aligns the matrices according to unexposed variables, multiplies them element-wise, then sums over the unexposed variable.
-After the process is complete, the resulting array is a plot of potential solutions, up to some level of precision depending on the initial discretization.
-
-This method is very similar to how goals in semiringKanren are evaluated.
-In semiringKanren, using a fresh variable to call multiple relations in conjunction is mathematically equivalent to the generalized array multiplication method used for pixel arrays.
-However, the pixel array method is a discrete approximation of continuous math, and in particular may produce false positives.
-Because semiringKanren computes algebraic data types which are already discrete, it has no such accuracy issues.
-Furthermore, it can express more complicated relational joins than directly aligning variables.
-
-\section{SAT Compilation}
-
-The semiringKanren language supports evaluation via SAT solving, which can greatly improve efficiency. Other relational programming engines which support SAT evaluation include Kodkod\cite{torlak2007}, Paradox, and MACE2.
-
-\section{Polymorphic Logic Languages}
-
-We call a typed logic programming language \emph{polymorphic} when it can define a single relation that can operate on several types.
-Polymorphic languages roughly fall into two categories: languages with \emph{parametric} polymorphism, and languages with \emph{ad-hoc} polymorphism.
-Languages with \emph{parametric} polymorphism use \emph{type variables} to represent unknown types.
-In general, operations other than assignment are not permitted on values of a variable type.
-Languages with \emph{ad-hoc} polymorphism usually have some means of detecting the type of values, and using this information to potentially perform different operations depending on the type.
-
-Relational programming languages supporting parametric polymorphism include Flix\cite{madsen2020} (which embeds datalog), and functional IncA\cite{pacak2022} (which extends datalog with functions).
-Both of these languages use \emph{monomorphization} to implement polymorphism,
-which means generating a version of each function or relation for each type it gets called with.
-We also support parametric polymorphism in semiringKanren, but do so \emph{without} monomorphization---we believe this to be first for bottom-up relational programming languages.
-It is worth noting that Flix is also supports computing over arbitrary semirings.
-
-Datalog variants frequently exhibit ad-hoc polymorphism.
-We have already discussed how datalog programs that implement types as unary relations often exhibit a form of subtyping.
-Implementations such as PolyDatalog\cite{atzeni2010} extend this to more sophisticated object-relational type systems.
-
-The Mercury\cite{somogyi1996} relational programming language supports parametric polymorphism by passing along specialized unification and comparison relations for each type variable
-when a polymorphic relation is called.
-This is different from monomorphization, as only these unification and comparison relations are specialized.
-While the canonical implementation of Mercury is based on top-down search,
-Mercury has also been implemented on the bottom-up Aditi\cite{vaghanl1994} deductive database system.
-It is unclear how exactly the implementation of polymorphism was translated,
-but this may be a prior instance of non-monomorphizing polymorphism for a bottom-up relational programming language.
-
-It is worth noting that many top-down relational programming languages, including miniKanren, are untyped and thus support a form of polymorphism by default.
-
-\section{Other Related Work}
-
-The paper "Testing Polymorphic Properties"\cite{bernardy2010} outlines a method to test polymorphic functions in languages with parametric polymorphism
-by only testing a single monomorphic instance of the function.
-While our work is different, we also show that only a single monomorphic instance is needed when using a polymorphic relation.
-
 \chapter{semiringKanren}
 
 Here, we provide an introduction to the semiringKanren language and the underlying principles.
@@ -1671,25 +1560,142 @@ When possible, we prefer compiling relation calls as outlined here, but we can a
 As such, this method is not truly "non-monomorphizing."
 That said, anecdotally many relation calls \emph{do} end up being large-enough; this method is non-monomorphizing "most of the time."
 
+\chapter{Related Work}
+
+\section{miniKanren}
+
+The miniKanren\cite{byrd2012} family of languages consists of relational programming languages which are often shallowly-embedded within a host language (such as Scheme).
+Relations in miniKanren are defined in terms of \emph{goals}, which usually include: value unification, fresh variable introduction, and program branching.
+Languages in the miniKanren family often excel at code generation based on relational interpreters, with quine generation being a particularly compelling example.
+As the name may imply, semiringKanren draws extensive inspiration from miniKanren.
+In particular, semiringKanren draws most of its concrete syntax from the the microKanren\cite{hemann2023} variant.
+
+One major difference between semiringKanren and miniKanren is that semiringKanren programs are typed, whereas miniKanren programs are untyped.
+That said, typed variants of miniKanren do exist, such as OCanren\cite{kosarev2018} and typedKanren\cite{kudasov2024}.
+
+Some variants of miniKanren support constraints.
+In particular, type constraints such as \(\texttt{symbolo}\) and \(\texttt{numbero}\),
+and disequality constraints (usually notated with \(\texttt{=/=}\)) are relatively common.
+Values in semiringKanren are typed, so semiringKanren avoids the need for specific type constraints.
+Disequality constraints are supported by semiringKanren, and are considerably easier to implement than in other miniKanren variants.
+
+Implementations of miniKanren are usually based on top-down searches based on filtering and combining streams of potential solutions.
+With semiringKanren, we use a different approach based on bottom-up fact generation, where new facts are gradually derived from existing ones.
+
+As of writing, semiringKanren does not support recursive data types, and therefore has not yet demonstrated the ability to generate quines.
+
+\section{Datalog}
+
+Datalog\cite{green2007} is a family of relational programming languages based on finding the \emph{least fixed point} of a database of facts.
+Relations in datalog are defined in terms of Horn clauses (disjunctions of conditions which are used to determine a fact).
+Datalog queries are executed by repeatedly deriving new facts using these clauses until no new facts are derived, in a process referred to as \emph{bottom-up evaluation}.
+This has the advantage of being able to compute queries which may not terminate in top-down relational languages.
+The execution model of semiringKanren is directly based on this bottom-up approach.
+
+While many models of relational algebra are boolean (relations either directly succeed or directly fail), some datalog variants introduce the concept of \emph{annotated relations}.
+These generalize relations to \(K\)-relations, where facts are annotated with elements from a commutative semiring (a set with multiplication and addition operations, where multiplication distributes over addition).
+These annotations can be used to represent, for example, bag relations (where a fact may occur multiple times), or probabilistic databases (where facts may occur with some probability).
+In particular, it is common to use these annotations to track \emph{provenance}, or the reasoning behind the derivation of each fact.
+The implementation of semiringKanren is designed to support computation over any valid semiring.
+
+Dyna\cite{francislandau2024} is a descendent of datalog that supports \emph{aggregators}, which permit programmers to choose from a larger set of operations on weights.
+
+Traditionally, datalog has only a string or symbol type.
+Other types are constructed by defining unary relations which only succeed for a subset of symbol values\cite{fruhwirth1991}.
+In particular, this permits subtyping relations.
+This differs from semiringKanren, which uses algebraic data types.
+Some datalog implementations may also support numeric types, such as integers or floating-point numbers.
+
+\section{Weighted Logic Languages}
+
+Datalog is not the only relational programming language that supports annotating facts with weights.
+In particular, there are several variants of miniKanren which support probabilistic logic.
+The slpKanren\cite{byrd2013} variant is based on stochastic logic, which generalizes stochastic grammars and requires disjunctions to be annotated with probabilities.
+The probKanren\cite{zinkov2021} variant allows probabilistically drawing variables from both continuous and discrete distributions,
+and performs probabilistic inference using a Sequential Monte Carlo method.
+There is also a variant based on weighted model counting\cite{donahue2022}, which tracks the likelihood of facts across several possible distributions.
+Of these variants, semiringKanren is most similar to slpKanren (when computing over the usual semiring for real numbers).
+
+Probabilistic logic programming has also been widely explore outside of the miniKanren family of languages\cite{riguzzi2022}.
+Probabilistic variants of Prolog include ProbLog, Probabilistic Horn Abduction/Independent Choice Logic, and PRISM,
+all of which are based on annotating disjunctions with probabilities, and have the same expressive power.
+Bayesian Logic Programs, CLP(BN), and the Prolog Factor language are other probabilistic Prolog variants.
+
+\section{Pixel Arrays}
+
+Pixel arrays\cite{spivak2017} are a method of approximating solutions to nonlinear systems of equations.
+Broadly, the equations are first discretized, then plotted in arrays.
+Then, a generalized form of matrix multiplication to combine these arrays to reach a final result.
+More specifically, it aligns the matrices according to unexposed variables, multiplies them element-wise, then sums over the unexposed variable.
+After the process is complete, the resulting array is a plot of potential solutions, up to some level of precision depending on the initial discretization.
+
+This method is very similar to how goals in semiringKanren are evaluated.
+In semiringKanren, using a fresh variable to call multiple relations in conjunction is mathematically equivalent to the generalized array multiplication method used for pixel arrays.
+However, the pixel array method is a discrete approximation of continuous math, and in particular may produce false positives.
+Because semiringKanren computes algebraic data types which are already discrete, it has no such accuracy issues.
+Furthermore, it can express more complicated relational joins than directly aligning variables.
+
+\section{SAT Compilation}
+
+The semiringKanren language supports evaluation via SAT solving, which can greatly improve efficiency\cite{volkov2025}.
+FormuLog\cite{bembenek2018} is a datalog variant which uses SMT solvers to evaluate logical formulas, as an extension to the standard bottom-up datalog evaluation strategy.
+Other relational programming engines which support SAT evaluation include Kodkod\cite{torlak2007}, Paradox, and MACE2.
+
+\section{Polymorphic Logic Languages}
+
+We call a typed logic programming language \emph{polymorphic} when it can define a single relation that can operate on several types.
+Polymorphic languages roughly fall into two categories: languages with \emph{parametric} polymorphism, and languages with \emph{ad-hoc} polymorphism.
+Languages with \emph{parametric} polymorphism use \emph{type variables} to represent unknown types.
+In general, operations other than assignment are not permitted on values of a variable type.
+Languages with \emph{ad-hoc} polymorphism usually have some means of detecting the type of values, and using this information to potentially perform different operations depending on the type.
+
+Relational programming languages supporting parametric polymorphism include Flix\cite{madsen2020} (which embeds datalog), and functional IncA\cite{pacak2022} (which extends datalog with functions).
+Both of these languages use \emph{monomorphization} to implement polymorphism,
+which means generating a version of each function or relation for each type it gets called with.
+We also support parametric polymorphism in semiringKanren, but do so \emph{without} monomorphization---we believe this to be first for bottom-up relational programming languages.
+It is worth noting that Flix is also supports computing over arbitrary semirings.
+
+Datalog variants frequently exhibit ad-hoc polymorphism.
+We have already discussed how datalog programs that implement types as unary relations often exhibit a form of subtyping.
+Implementations such as PolyDatalog\cite{atzeni2010} extend this to more sophisticated object-relational type systems.
+
+The Mercury\cite{somogyi1996} relational programming language supports parametric polymorphism by passing along specialized unification and comparison relations for each type variable
+when a polymorphic relation is called.
+This is different from monomorphization, as only these unification and comparison relations are specialized.
+While the canonical implementation of Mercury is based on top-down search,
+Mercury has also been implemented on the bottom-up Aditi\cite{vaghanl1994} deductive database system.
+It is unclear how exactly the implementation of polymorphism was translated,
+but this may be a prior instance of non-monomorphizing polymorphism for a bottom-up relational programming language.
+
+It is worth noting that many top-down relational programming languages, including miniKanren, are untyped and thus support a form of polymorphism by default.
+
+\section{Other Related Work}
+
+Tabling\cite{tamaki1986} is an approach used by top-down relational programming languages in which goal results are memoized.
+This allows top-down languages to avoid getting stuck searching ineffectual paths, and overall function more similarly to bottom-up languages.
+Top-down languages are often untyped/polymorphic by default, so this approach can achieve the benefits of both polymorphic and bottom-up languages.
+
+The paper "Testing Polymorphic Properties"\cite{bernardy2010} outlines a method to test polymorphic functions in languages with parametric polymorphism
+by only testing a single monomorphic instance of the function.
+While our work is different, we also show that only a single monomorphic instance is needed when using a polymorphic relation.
+
 \chapter{Conclusions and Future Work}
 
 We have presented semiringKanren, a polymorphic bottom-up weighted relational programming language.
-This work builds on the state-of-the-art of relational programming in three ways:
-\begin{enumerate}
-	\item semiringKanren ihe first bottom-up variant of miniKanren.
-	\item semiringKanren compiles to SAT, which can significantly outperform the current top miniKanren implementations.
-	\item semiringKanren supports parametric polymorphism without monomorphization, a first for bottom-up relational languages.
-\end{enumerate}
+This work builds on the state-of-the-art of relational programming in two ways:
+semiringKanren is the first bottom-up variant of miniKanren,
+and semiringKanren is the first bottom-up relational programming language to support parametric polymorphism without monomorphization.
 In particular, we present a denotational semantics for semiringKanren based on operations on multidimensional arrays with elements drawn from a commutative semiring.
-We show how arbitrary algebraic data types, including sum types, can be coerced to products of booleans, while still permitting the same operations and expressing the same values.
-From this, we show how semiringKanren programs over the boolean semiring can be straightforwardly compiled to SAT problems.
+We show how these semantics can be extended to support polymorphism.
 Finally, we introduce the notions of \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations,
 and show how these can be used to compile polymorphic programs into non-polymorphic ones, with minimal monomorphization.
 
+% TODO: revise this paragraph for a more satisfying conclusion
 We feel that the miniKanren approach to relational programming lends naturally to these developments.
-In particular, microKanren-style \(\texttt{conj}\) and \(\texttt{disj}\)-based syntax leads to a very straightforward denotational semantics and SAT translation.
-Furthermore, the flexibility to freely nest goals makes it straightforward to express the nontrivial patterns used when coercing sum types to booleans,
-or when compiling polymorphic programs into non-polymorphic ones.
+In particular, microKanren-style \(\texttt{conj}\) and \(\texttt{disj}\)-based syntax leads to a very straightforward denotational semantics.
+Furthermore, the flexibility to freely nest goals makes it straightforward to express the nontrivial patterns used when compiling polymorphic programs into non-polymorphic ones.
+
+The OCaml implementation of semiringKanren is available on GitHub\footnote{semiringKanren repository: \url{https://github.com/sporkl/semiringkanren}}.
 
 \section{Future Work}
 

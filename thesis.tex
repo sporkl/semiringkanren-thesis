@@ -93,9 +93,9 @@ Here, we provide an introduction to the semiringKanren language and the underlyi
 The semiringKanren language consists of relations defined in terms of goals, which may take in values corresponding to algebraic data types.
 Relations take arguments, and semiringKanren computes weights for every possible value assignment to arguments.
 
-The semiringKanren language as presented here differs from prior work\cite{volkov2025}.
-Rather than having primitive "constructor" relations, this version extends the value language allowed within unification and deunification.
-We believe this offers greater expressivity, and simplifies the implementation of algorithms occuring later in this work.
+The semiringKanren language as presented here differs from prior work~\cite{volkov2025}.
+Rather than having primitive "constructor" relations, this version extends the value language allowed within unification and disunification.
+We believe this makes programs easier to write, and simplifies the implementation of algorithms occuring later in this work.
 
 \section{Example Programs}
 
@@ -146,8 +146,8 @@ Hence, this relation assigns the weight \(0.7\) to \(\texttt{(left sole)}\) (cor
 \subsection{Recursion}
 
 Within a relation, we can call other relations or even recursively call the current relation.
-For example, we can simulate a fair coin flip with unfair coins\cite{vonneumann1963}.
-For this process, we flip and unfair coin twice.
+For example, we can simulate a fair coin flip with unfair coins~\cite{vonneumann1963}.
+For this process, we flip an unfair coin twice.
 If the two coin flips have the same result, we repeat the process.
 Otherwise, we go with the result of the first coin flip.
 \begin{equation}
@@ -178,15 +178,15 @@ We refer to this as \emph{bottom-up evaluation}.
 \subsection{Semirings}
 
 So far we have been working with the real numbers \(\mathbb{R}\), where \(\texttt{disj}\) corresponds to real number addition, and \(\texttt{conj}\) corresponds to real number multiplication.
-However, semiringKanren can evaluate programs over any \(\texttt{commutative semiring}\).
+However, semiringKanren can evaluate programs over any \emph{commutative semiring}.
 A commutative semiring is a set equipped with \(+\) and \(\times\) operations, both of which are commutative and associative and obey distributivity \(a \times (b + c) = (a \times b) + (a \times c)\).
-We also require this set to have a multiplicative identity \(1\), and an additive identity and multiplicative annihlator \(0\).
-Sometimes the term \emph{rig}, as in "ri\underline{n}g without \underline{n}egation," is used in this case.
+We also require this set to have a multiplicative identity~\(1\), and an additive identity and multiplicative annihlator~\(0\).
+Sometimes the term \emph{rig}, as in "ri\underline{n}g without \underline{n}egation," is used.
 Besides the real numbers equipped with addition and multiplication \((\mathbb{R}, +, *,0,1)\),
 other semirings include the \emph{boolean semiring}, equipped with logical "or" and logical "and" \((\mathbb{B},\vee,\wedge,\bot,\top)\),
-or the \emph{min-tropical semiring}: the real numbers and infinity equipped with minimum and addition \((\mathbb{R}^{\infty},\min,+,\infty,0)\).
+and the \emph{min-tropical semiring}: the real numbers and infinity equipped with minimum and addition \((\mathbb{R}^{\infty},\min,+,\infty,0)\).
 
-To consider the utility of different semirings, we present the exxample of transitive closure of a relation.
+To show the utility of different semirings, we present the example of transitive closure of a relation.
 Transitive closure can be thought of as "reachability by chaining."
 Given a relation \(a \mathrel{R} b\), for each element \(x\), we want to find all \(y\) such that \(x \mathrel{R} \dots \mathrel{R} y\).
 We can represent the relation we want to process as a graph:
@@ -951,7 +951,7 @@ when they have the same shell, and when all equal pairs of holes of a type varia
 
 For example, consider \(\delta_1 = \sigma_1(\Delta)\) and \(\delta_2 = \sigma_2(\Delta)\), with \(\Delta\) as follows:
 \[\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}, y : \alpha\]
-We will present potential equality patterns of the form \(\delta_1 \eqpatD delta_2\), and explain why they do or do not hold.
+We will present potential equality patterns of the form \(\delta_1 \eqpatD \delta_2\), and explain why they do or do not hold.
 We underline holes for illustration.
 First consider:
 \[ x \mapsto \texttt{(left \underline{sole})}, y \mapsto \texttt{\underline{sole}} \eqpatD x \mapsto \texttt{(right \underline{sole})}, y \mapsto \texttt{\underline{sole}} \]

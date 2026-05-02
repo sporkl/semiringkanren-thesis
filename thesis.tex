@@ -46,7 +46,7 @@
 	This work demonstrates a new approach for implementing polymorphism for bottom-up relational languages, without monomorphization.
 	We begin presenting semiringKanren, a bottom-up weighted relational programming language.
 	We extend this base language to support polymorphism.
-	We describe a new method to compile polymorphic semiringKanren programs into non-polymorphic ones, based on \emph{equality patterns} and \emph{large-enough} polymorphic relation instances.
+	We describe a new method to compile polymorphic semiringKanren programs into non-polymorphic ones, based on \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations.
 	We prove the correctness of this method.
 	Finally, we consider existing work and suggest directions for future research.
 \end{abstract}
@@ -82,7 +82,7 @@ In this work, we present semiringKanren, a bottom-up weighted relational program
 We begin by showcasing the base semiringKanren langauge, which does not support polymorphism, to build familiarity and establish the foundational concepts.
 We then demonstrate how the syntax and type system of this base language can be extended to support polymorphism.
 We briefly describe a monomorphizing semantics for this language, before introducing a non-monomorphizing compilation technique from the polymorphic language to the base language.
-In particular, we show how \emph{equality patterns} can be used to extract the underlying structure of \emph{large-enough relations} to handle polymorphic relation calls at different types.
+In particular, we show how \emph{equality patterns} can be used to extract the underlying structure of \emph{large-enough instances} of relations to handle polymorphic relation calls at different types.
 We conclude the section with correctness proofs of this approach.
 We compare semiringKanren with existing work, with a particular focus on other polymorphic bottom-up weighted relational languages.
 Finally, we consider areas for further exploration and development.
@@ -521,10 +521,12 @@ These semantics are shown in figure \ref{fig:relation-semantics}
 
 \chapter{Polymorphic semiringKanren}
 
-\section{Polymorphic relations}
+\section{Polymorphic Relations}
 
 We extend semiringKanren with \emph{polymorphic relations}, which operate on values of unknown types (represented with \emph{type variables}).
 We introduce polymorphic relations by example.
+
+\subsection{Equal}
 
 Consider the following relation:
 \begin{align*}
@@ -541,6 +543,8 @@ In the first example, \(\alpha\) gets mapped to the type \(\texttt{Unit}\)
 In the second example, \(\alpha\) gets mapped to the type \(\texttt{(Prod (Sum Unit Unit) (Sum Unit Unit))}\).
 Note that the primitive relations \(\texttt{==}\) and \(\texttt{=/=}\) are polymorphic, even in the base language;
 they can operate on any type, including variable types, as long as both arguments have the same type.
+
+\subsection{Sum-Swap}
 
 Continuing to a larger example:
 \begin{align*}
@@ -563,6 +567,8 @@ succeeds when \(q = \texttt{(right sole)}\), and
 \[ \texttt{(sum-swap (right (right sole)) \(q\))} \]
 succeeds when \(q = \texttt{(left (right sole))}\).
 When we have multiple type variables, they can be mapped to different types.
+
+\subsection{Option-Map}
 
 As a "real-world" motivating example, consider the following:
 \begin{align*}
@@ -591,6 +597,8 @@ For example, \(\texttt{option-map}\) may be called as follows:
 \end{align*}
 Which would succeed for \(q = \texttt{(right (right sole))}\).
 Here, both \(\alpha\) and \(\beta\) are mapped to \(\texttt{(Sum Unit Unit)}\) within the \(\texttt{option-map}\) call.
+
+\subsection{Two-Valued}
 
 We present one more example:
 \begin{align*}
@@ -811,7 +819,7 @@ In the formal semantics type variables are explicitly specified, but in practice
 Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
 Finally, note we use the shorthand \(\alpha \in \tau\) to say "the type variable \(\alpha\) occurs somewhere within type \(\tau\)."
 
-\section{Monomorphizing semantics}
+\section{Monomorphizing Semantics}
 
 Here we update the denotational semantics to handle type variables.
 We use the term "concrete types" for types which do not contain type variables.
@@ -828,24 +836,14 @@ As such, for each relation \(R\) with type variables \(\alpha, \dots, \beta\),
 we generate concrete "monomorphic" instances of these relations \(R_{\sigma_1}, \dots, R_{\sigma_n}\), corresponding to all unique-up-to-size type variable substitutions \(\sigma_1, \dots, \sigma_n\).
 Note that we can easily generate types of size \(n\) as a sum type of \(n\) \(\texttt{Unit}\)s, so generating these substitutions is straightforward.
 
-As before, \(\gamma\) is a relation environment and matches the relation type context.
-More specifically, \(\gamma\) is a map from relation names to multidimensional arrays.
-We use the term "concrete value" to refer to values constructed from \texttt{sole}, \texttt{(left \(v\))}, \texttt{(right \(v\))}, and \texttt{(pair \(v_1\) \(v_2\))}; concrete values can not be variables.
-Let \(\delta\) be a value environment with type \(\sigma(\Delta)\).
-As before, \(\delta\) is a map from variable names to concrete values.
-The denotation for types is still as a set of specific values.
-We handle type variables by applying \(\sigma\) before taking the denotation of a type.
-The denotation for values under a variable context is a specific concrete value.
-The denotation for goals is expressed as a weight for each individual assignment of values to variables, but should be considered as a multidimensional array across all possible assignments.
-We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing.
-
 \begin{figure}
 \begin{align*}
 	\den{\texttt{Unit}} &= \{\texttt{sole}\} \\
 	\den{\texttt{(Sum \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(left \(v\))} \mid v \in \den{\tau_1}\} \cup \{\texttt{(right \(v\))} \mid v \in \den{\tau_2}\} \\
 	\den{\texttt{(Prod \(\tau_1\) \(\tau_2\))}} &= \{\texttt{(pair \(v_1\) \(v_2\))} \mid v_1 \in \den{\tau_1}, v_2 \in \den{\tau_2}\} \\
 \end{align*}
-\caption{Denotational semantics for types.}
+\caption{Denotational semantics for types, again.}
+	\label{fig:poly-types-semantics}
 \end{figure}
 
 \begin{figure}
@@ -856,7 +854,8 @@ We assume that all needed monomorphic instances of each relation are included in
 	\den{\texttt{(pair \(v_1\) \(v_2\))}} (\delta) &= \texttt{(pair \(\den{v_1} (\delta) \) \(\den{v_2} (\delta)\))} \\
 	\den{x} (\delta) &= \delta(x)
 \end{align*}
-\caption{Denotational semantics for values.}
+\caption{Denotational semantics for polymorphic values.}
+	\label{fig:poly-values-semantics}
 \end{figure}
 
 \begin{figure}
@@ -878,7 +877,8 @@ We assume that all needed monomorphic instances of each relation are included in
 	\textrm{ where } \vec v : \sigma'(\vec\tau) \\
 	\den{\texttt{(factor \(r\))}} (\gamma;\delta;\sigma) &= r
 \end{align*}
-\caption{Denotational semantics for goals.}
+\caption{Denotational semantics for polymorphic goals.}
+	\label{fig:poly-goals-semantics}
 \end{figure}
 
 \begin{figure}
@@ -888,12 +888,28 @@ We assume that all needed monomorphic instances of each relation are included in
 	\den{\textit{Rel}_1, \dots, \textit{Rel}_Q} = \;
 	\mathrel{\textrm{fix}} \gamma \mathrel{\textrm{in}} R_1 \mapsto \den{\textit{Rel}_1} (\gamma), \dots, R_Q \mapsto \den{\textit{Rel}_Q} (\gamma)
 \end{gather*}
-\caption{Denotational semantics for relations and programs.}
+\caption{Denotational semantics for polymorphic relations and programs.}
+	\label{fig:poly-relations-semantics}
 \end{figure}
 
-\section{Non-monomorphizing semantics}
+As before, \(\gamma\) is a relation environment and matches the relation type context.
+More specifically, \(\gamma\) is a map from relation names to multidimensional arrays.
+We use the term "concrete value" to refer to values constructed from \texttt{sole}, \texttt{(left \(v\))}, \texttt{(right \(v\))}, and \texttt{(pair \(v_1\) \(v_2\))}; concrete values can not be variables.
+Let \(\delta\) be a value environment with type \(\sigma(\Delta)\).
+As before, \(\delta\) is a map from variable names to concrete values.
+The denotation for types (figure \ref{fig:poly-types-semantics}) is still as a set of specific values.
+We handle type variables by applying \(\sigma\) before taking the denotation of a type.
+The denotation for values (figure \ref{fig:poly-values-semantics}) under a variable context is a specific concrete value.
+The denotation for goals (figure \ref{fig:poly-goals-semantics}) is expressed as a weight for each individual assignment of values to variables,
+but should be considered as a multidimensional array across all possible assignments.
+We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing.
+The semantics for relations and programs are given in figure \ref{fig:poly-relations-semantics}.
 
-In practice, semiringKanren avoids the need for monomorphization by using \emph{large-enough relations} and \emph{equality patterns}.
+\section{Non-Monomorphizing Semantics}
+
+\subsection{Equality Patterns}
+
+In practice, semiringKanren avoids the need for monomorphization by using \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations.
 Let us revisit the \(\texttt{sum-swap}\) relation:
 \begin{align*}
 	& \texttt{(defrel (sum-swap (\(x : \texttt{(Sum \(\alpha\) \(\beta\))}\)) (\(y : \texttt{(Sum \(\beta\) \(\alpha\))}\)))} \\
@@ -978,6 +994,8 @@ Here \(|\sigma_1(\alpha)| = 2\) and \(\sigma_2(\alpha) = \texttt{Unit}\).
 This equality pattern \emph{does} hold. The shells are equal,
 and the holes are equal both under \(\delta_1\) (\(\mathtt{0_2} = \mathtt{0_2}\)) and under \(\delta_2\) (\(\texttt{sole} = \texttt{sole}\)).
 
+\subsection{Large-Enough Relation Instances}
+
 For \(\texttt{sum-swap}\), we have determined that we can reproduce a call with \(|\alpha| = 3, |\beta| = 4\) using an array corresponding to type variable sizes \(|\alpha| = 3, |\beta| = 3\).
 Now we aim to do similar for \(\texttt{two-valued}\):
 \begin{align*}
@@ -1015,6 +1033,8 @@ First, we call the smallest large-enough relation with fresh variables.
 Then, we enforce an equality pattern between the fresh variables and the original arguments.
 This is functionally similar to "looking up" entries: calling the relation with fresh variables brings the entries into scope, and enforcing the equality pattern makes sure we get the right weight.
 
+\subsection{Compiling Polymorphic Programs}
+
 Getting this to work involves some tricks.
 In particular, we require semiring addition (used in \(\texttt{disj}\) and \(\texttt{fresh}\)) to be idempotent.
 Intuitively, in the monomorphizing semantics, \(\texttt{fresh}\) may sum over different numbers of values, which could make goal weights depend on the size of type variables.
@@ -1029,7 +1049,7 @@ When addition is idempotent, we instead have:
 \[ \den{\texttt{(fresh ((\(x : \alpha\))) (factor 1))}}(\dots) = 1 + \dots + 1 = 1 \]
 regardless of the size of \(\alpha\), because idempotence gives us \(1 + 1 = 1\).
 
-\section{Non-monomorphizing semantics correctness}
+\section{Non-Monomorphizing Semantics Correctness}
 
 We now aim to prove that this compilation scheme works as intended.
 Throughout this section, we assume that we are working over a commutative semiring with multiplicative identity \(1\), additive identity and multiplicative annihlator \(0\),
@@ -1711,14 +1731,14 @@ The OCaml implementation of semiringKanren is available on GitHub\footnote{semir
 
 \section{Future Work}
 
-\subsection{Large-enough Relation Instances}
+\subsection{Large-Enough Relation Instances}
 
 In this work, we present a method of counting type variable occurrences to determine when a relation is large-enough, but acknowledge that it is not sufficient in all cases.
 It remains to find a fully-general method for calculating the necessary type variable sizes for a relation to be large-enough.
 As we have briefly discussed, such a method may involve relation calls providing information about their own argument size requirements during the calculation process.
 In order to handle recursive calls, a fixpoint process may me necessary (as it is in normal program execution).
 
-\subsection{Higher-order Relations}
+\subsection{Higher-Order Relations}
 
 It is relatively rare for relational programming languages to support higher-order relations (relations which take other relations as arguments).
 Existing work in the space includes \(\lambda\)Prolog\cite{felty1988} and \(\lambda\)Kanren\cite{weixi2020}.
@@ -1789,7 +1809,7 @@ It remains to see where semiringKanren may be effectively applied.
 We believe semiringKanren may be a strong fit for probabilistic modelling.
 It may also be worthwhile to explore existing applications of datalog, and see which may benefit from the greater expressivity of miniKanren-style syntax.
 
-\subsection{Alternative evaluation strategies}
+\subsection{Alternative Evaluation Strategies}
 
 We have shown evaluation strategies for semiringKanren based on operations on semiring arrays, and translate to SAT problems.
 We believe there are several other evaluation strategies worth exploring.

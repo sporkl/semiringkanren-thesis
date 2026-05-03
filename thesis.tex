@@ -43,8 +43,8 @@
 \maketitle
 
 \begin{abstract}
-	This work demonstrates a new approach for implementing polymorphism for bottom-up relational languages, without monomorphization.
-	We begin presenting semiringKanren, a bottom-up weighted relational programming language.
+	This work presents a new approach for implementing polymorphism for bottom-up relational languages, without monomorphization.
+	We begin by introducing semiringKanren, a bottom-up weighted relational programming language.
 	We extend this base language to support polymorphism.
 	We describe a new method to compile polymorphic semiringKanren programs into non-polymorphic ones, based on \emph{equality patterns} and \emph{large-enough instances} of polymorphic relations.
 	We prove the correctness of this method.
@@ -62,25 +62,25 @@ Applications of relational programming languages include natural language proces
 Relational programming languages are usually implemented either via \emph{top-down} search, or \emph{bottom-up} fact collection.
 Top-down relational programming languages include Prolog and miniKanren; bottom-up relational languages include datalog and SQL.
 The top-down approach can effectively handle recursive data, but can also be prone to getting stuck searching an ineffectual branch.
-The bottom-up approach may not be able to handle recursive data, and may use space less efficiently, but has a much clearer semantics (especially for weighted relations) and can avoid many of the traps of top-down languages.
+The bottom-up approach may not be able to handle recursive data, and may use space less efficiently, but has a clearer semantics (especially for weighted relations) and can avoid many of the traps of top-down languages.
 
 For programming languages, \emph{polymorphism} is used to describe code that can operate on different types of data.
 When programmers want to processes different types of data in similar ways, polymorphism allows them to do so without manually re-writing similar code for each particular type.
 Polymorphism is generally classified as \emph{parametric} or \emph{ad-hoc}.
-In parametric polymorphism, unknwon types are expressed as \emph{type variables}, and direct operations on values of unknown types are prohibited.
+In parametric polymorphism, unknown types are expressed as \emph{type variables}, and direct operations on values of unknown types are prohibited.
 Ad-hoc polymorphism does allow operations, and these operations behave differently depending on the underlying types of the values.
 In this work, we focus on parametric polymorphism.
 
 The notion of a bottom-up polymorphic relational programming language can feel paradoxical.
 How can we collect facts like ``\(x\) is related to \(y\)'' when we do not know the domains \(x\) and \(y\) are drawn from?
-One approach might be to track which types for \(x\) and \(y\) are actually used in practice, and create versions of the relations specialized for those types.
+One approach might be to track which types for \(x\) and \(y\) are used in practice, and create versions of the relations specialized for those types.
 This approach is known as \emph{monomorphization}.
-However, this can substantially increase the size of programs, and does not generalize.
+Unfortunately, this can substantially increase the size of programs, and does not generalize.
 What if we want to call a relation on new types, for which specialized relations have not yet been generated?
 
 In this work, we present semiringKanren, a bottom-up weighted relational programming language supporting polymorphism \emph{without} monomorphization.
-We begin by showcasing the base semiringKanren langauge, which does not support polymorphism, to build familiarity and establish the foundational concepts.
-We then demonstrate how the syntax and type system of this base language can be extended to support polymorphism.
+We begin by presenting the base semiringKanren language, which does not support polymorphism, to build familiarity and establish the foundational concepts.
+We then show how the syntax and type system of this base language can be extended to support polymorphism.
 We briefly describe a monomorphizing semantics for this language, before introducing a non-monomorphizing compilation technique from the polymorphic language to the base language.
 In particular, we show how \emph{equality patterns} can be used to extract the underlying structure of \emph{large-enough instances} of relations to handle polymorphic relation calls at different types.
 We conclude the section with correctness proofs of this approach.
@@ -88,17 +88,17 @@ We compare semiringKanren with existing work, with a particular focus on other p
 Finally, we consider areas for further exploration and development.
 
 We believe that this new approach to polymorphism can offer improvements in the broader space of relational programming.
-In particular, we hope it may offer efficiency gains, and enable ``separate evalaution'' of polymorphic programs.
+In particular, we hope it may offer efficiency gains, and enable ``separate evaluation'' of polymorphic programs.
 
 \chapter{semiringKanren}
 
-Here, we provide an introduction to the semiringKanren language and the underlying principles.
+Here, we provide introduce the semiringKanren language and the underlying principles.
 The semiringKanren language consists of relations defined in terms of goals, which may take in values corresponding to algebraic data types.
 Relations take arguments, and semiringKanren computes weights for every possible value assignment to arguments.
 
 The semiringKanren language as presented here differs from prior work~\cite{volkov2025}.
 Rather than having primitive ``constructor'' relations, this version extends the value language allowed within unification and disunification.
-We believe this makes programs easier to write, and simplifies the implementation of algorithms occuring later in this work.
+We believe this makes programs easier to write, and simplifies the implementation of algorithms occurring later in this work.
 
 \section{Example Programs}
 
@@ -117,7 +117,7 @@ We use \(\texttt{defrel}\) to define new relations.
 	& \quad\quad \texttt{(== coin (right sole))))} \\
 \end{aligned}
 \end{equation}
-Here, we define a relation \(\texttt{coin-flip}\) which takes a single argument of type \(\texttt{(Sum Unit Unit)}\).
+Here, we define a relation \(\texttt{coin-flip}\) that takes a single argument of type \(\texttt{(Sum Unit Unit)}\).
 The type \(\texttt{(Sum Unit Unit)}\) has two values: \(\texttt{(left sole)}\) and \(\texttt{(right sole)}\).
 We use \(\texttt{(left sole)}\) to represent tails, and \(\texttt{(right sole)}\) to represent heads.
 This definition showcases two types of goals: the connective \(\texttt{disj}\) and the primitive relation \(\texttt{==}\).
@@ -126,7 +126,7 @@ The primitive relation \(\texttt{==}\) succeeds when its two arguments are equal
 Thus, this relation succeeds either when it is called with the argument \(\texttt{(left sole)}\), or with the argument \(\texttt{(right sole)}\).
 
 Note that many relational programming languages have a distinction between relations and \emph{queries} on those relations.
-This distinction is not neccesary in semiringKanren because relation evaluation already directly returns the satisfying argument values.
+This distinction is not necessary in semiringKanren because relation evaluation already directly returns the satisfying argument values.
 
 \subsection{Weighted Relations}
 
@@ -183,7 +183,7 @@ We refer to this as \emph{bottom-up evaluation}.
 So far we have been working with the real numbers \(\mathbb{R}\), where \(\texttt{disj}\) corresponds to real number addition, and \(\texttt{conj}\) corresponds to real number multiplication.
 However, semiringKanren can evaluate programs over any \emph{commutative semiring}.
 A commutative semiring is a set equipped with \(+\) and \(\times\) operations, both of which are commutative and associative and obey distributivity \(a \times (b + c) = (a \times b) + (a \times c)\).
-We also require this set to have a multiplicative identity~\(1\), and an additive identity and multiplicative annihlator~\(0\).
+We also require this set to have a multiplicative identity~\(1\), and an additive identity and multiplicative annihilator~\(0\).
 Sometimes the term \emph{rig}, as in ``ri\underline{n}g without \underline{n}egation,'' is used.
 Besides the real numbers equipped with addition and multiplication \((\mathbb{R}, +, *,0,1)\),
 other semirings include the \emph{boolean semiring}, equipped with logical ``or'' and logical ``and'' \((\mathbb{B},\vee,\wedge,\bot,\top)\),
@@ -282,7 +282,7 @@ When we evaluate this over the min-tropical semiring with \(w = 1\), we get the 
 	\label{fig:semiringkanren-syntax}
 \end{figure}
 
-We give the syntax of semiringKanren, ommitting some syntactic sugar, in figure \ref{fig:semiringkanren-syntax}.
+We give the syntax of semiringKanren, omitting some syntactic sugar, in figure \ref{fig:semiringkanren-syntax}.
 Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\texttt{fresh}\) can only introduce a single variable at a time.
 
 \begin{figure}
@@ -405,19 +405,19 @@ Here, \(\texttt{conj}\) and \(\texttt{disj}\) must have two subgoals, and \(\tex
 \label{fig:relation-types}
 \end{figure}
 
-The type system for semiringKanren is shown in figure \ref{fig:value-types} which shows the type system for values,
-figure \ref{fig:goal-types} which shows the type system for goals, and figure \ref{fig:relation-types} which shows the type system for relations and programs.
+Figure \ref{fig:value-types} shows the type system for semiringKanren values,
+figure \ref{fig:goal-types} shows the type system for goals, and figure \ref{fig:relation-types} shows the type system for relations and programs.
 For values, the typing judgement \(\Delta \vdash v : \tau\) means that the value \(v\) has type \(\tau\) under the value context \(\Delta\), which tracks the types of variables.
 Note that we annotated the \(\texttt{left}\) and \(\texttt{right}\) sum type constructors with full sum types, to disambiguate the larger type while type checking.
 In practice, this is not necessary.
 Each entry in \(\Delta\) has the form \(x : \tau\), where \(x\) is a variable (from either a relation argument, or \(\texttt{fresh}\)), and \(\tau\) is a type.
 For goals, we use the judgement \(\Gamma; \Delta \vdash g \wt\) to indicate that the goal \(g\) is well-typed under value context \(\Delta\) and relation context \(\Gamma\),
-which tracks the types of relations.
-Each entry in \(\Gamma\) has the form \((R : \tau_1, \dots, \tau_n \to)\) which indicates that the relation with name \(R\) takes \(n\) arguments, which have types \(\tau_1, \dots, \tau_n\).
-For relations, we use the similar judgement \(\Gamma \vdash Rel \wt\), ommitting the \(\Delta\) context because it is not yet needed (there are no variables to bind).
+that tracks the types of relations.
+Each entry in \(\Gamma\) has the form \((R : \tau_1, \dots, \tau_n \to)\) to indicate that the relation with name \(R\) takes \(n\) arguments with types \(\tau_1, \dots, \tau_n\).
+For relations, we use the similar judgement \(\Gamma \vdash Rel \wt\), omitting the \(\Delta\) context because it is not needed (there are no variables to bind).
 For programs, where there is no larger context, we simply use \(P \wt\).
 
-Note that our relation typing judgement is ``the relation is well-typed under a context.. rather than ``the relation has type \(\dots\).''
+Note that our relation typing judgement is ``the relation is well-typed under a context'' rather than ``the relation has type \(\dots\).''
 Relations are required to specify all needed typing information, so it only is necessary to check that their bodies are compatible.
 Because the types of all relations are known ahead-of-time, we avoid potential issues of recursive dependencies when type-checking relation calls.
 We use the shorthand \((\vec x : \vec\tau)\) as shorthand for \((x_1 : \tau_1) \; \dots \; (x_n : \tau_n)\), or similar.
@@ -458,7 +458,7 @@ One way this can be done is by ordering the values lexicographically, then using
 \end{figure}
 
 The semantics for values, as shown in figure \ref{fig:values-semantics}, is similar to identity but substitutes variables where appropriate.
-We use the term \emph{concrete values} for values which do not include variables.
+We use the term \emph{concrete values} for values that do not include variables.
 The denotation for values turns arbitrary values (which may contain variables) into concrete values.
 To this end, we take a \emph{value environment} \(\delta\), consisting of entries of the form \(x \mapsto v\), where \(x\) is a variable name and \(v\) is a concrete value.
 For \(\delta\) to be valid, each entry \(x \mapsto v\) should have a corresponding type entry in \(\Delta\) where \(\Delta \vdash x : \tau\) and \(\cdot \vdash v : \tau\).
@@ -514,8 +514,8 @@ We define the denotation of a relation to be a map from elements drawn from the 
 Thus, the elements of \(\gamma\) are precomputed relation denotations.
 We compute this denotation by evaluating the goal structure of the relation for all possible values inhabiting the argument types
 We now define the denotation of a complete program to be the least fixed point of the denotation of all relations.
-So we use \(\gamma\) to repeatedly compute the denotation of each relation to get a new \(\gamma\), and repeat this process until \(\gamma\) stabilizes.
-In practice, \(\gamma\) starts out consisting of relations which always fail.
+We use \(\gamma\) to repeatedly compute the denotation of each relation to get a new \(\gamma\), and repeat this process until \(\gamma\) stabilizes.
+In practice, \(\gamma\) starts out consisting of relations that always fail.
 Then, the fixpointing process can be thought of as iteratively deriving new information about \(\gamma\).
 These semantics are shown in figure \ref{fig:relation-semantics}
 
@@ -523,7 +523,7 @@ These semantics are shown in figure \ref{fig:relation-semantics}
 
 \section{Polymorphic Relations}
 
-We extend semiringKanren with \emph{polymorphic relations}, which operate on values of unknown types (represented with \emph{type variables}).
+We extend semiringKanren with \emph{polymorphic relations} that operate on values of unknown types (represented with \emph{type variables}).
 We introduce polymorphic relations by example.
 
 \subsection{Equal}
@@ -615,7 +615,7 @@ For example, \(\texttt{option-map}\) may be called as follows:
 	& \quad \quad \texttt{(option-map (pair \(h\) \(k\)) (right (left sole)) \(q\))))}
 \end{aligned}
 \end{equation}
-Which would succeed for \(q = \texttt{(right (right sole))}\).
+This succeeds for \(q = \texttt{(right (right sole))}\).
 Here, both \(\alpha\) and \(\beta\) are mapped to \(\texttt{(Sum Unit Unit)}\) within the \(\texttt{option-map}\) call.
 
 \subsection{Two-Valued}
@@ -842,21 +842,21 @@ As before, \(\Delta\) holds value typing judgements (of the form \(x:\tau\)).
 In both cases, type variables may now appear in \(\tau\).
 
 In the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
-Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types which may contain not-yet-valid type variables (such as within polymorphic relation calls).
+Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types that may contain not-yet-valid type variables (such as within polymorphic relation calls).
 Finally, note we use the shorthand \(\alpha \in \tau\) to say ``the type variable \(\alpha\) occurs somewhere within type \(\tau\).''
 
 \section{Monomorphizing Semantics}
 
 Here we update the denotational semantics to handle type variables.
-We use the term ``concrete types'' for types which do not contain type variables.
+We use the term ``concrete types'' for types that do not contain type variables.
 We introduce \emph{type variable substitutions}, which we apply to a types potentially containing type variables, to turn them into a concrete types
 Type variable substitutions walk the tree structure of the type, and replace type variables with specific concrete types.
 
 Temporarily ignoring substitutions, imagine we wish to operate on values of an unknown type.
-In order to represent such a value with the array-based semantics, we need to know the size of the type so that we can have a large enough corresponding array dimension.
+To represent such a value with the array-based semantics, we need to know the size of the type so that we can have a large enough corresponding array dimension.
 Once we have space for the type, we can easily define equality and disequality operations on the type by using diagonals and off-diagonals, as before.
-This generalizes to values which may only partially consist of an unknown type.
-But because the specifics of the types are unknown, we have no other operations.
+This generalizes to values that may only partially consist of an unknown type.
+Because the specifics of the types are unknown, we have no other operations.
 Thus, we can treat all unknown types of the same size equivalently.
 As such, for each relation \(R\) with type variables \(\alpha, \dots, \beta\),
 we generate concrete ``monomorphic'' instances of these relations \(R_{\sigma_1}, \dots, R_{\sigma_n}\), corresponding to all unique-up-to-size type variable substitutions \(\sigma_1, \dots, \sigma_n\).
@@ -926,7 +926,7 @@ As before, \(\delta\) is a map from variable names to concrete values.
 The denotation for types (figure \ref{fig:poly-types-semantics}) is still as a set of specific values.
 We handle type variables by applying \(\sigma\) before taking the denotation of a type.
 The denotation for values (figure \ref{fig:poly-values-semantics}) under a variable context is a specific concrete value.
-The denotation for goals (figure \ref{fig:poly-goals-semantics}) is expressed as a weight for each individual assignment of values to variables,
+The denotation for goals (figure \ref{fig:poly-goals-semantics}) is expressed as a weight for each assignment of values to variables,
 but should be considered as a multidimensional array across all possible assignments.
 We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing.
 The semantics for relations and programs are given in figure \ref{fig:poly-relations-semantics}.
@@ -974,7 +974,7 @@ When we keep \(|\alpha| = 3\) but change \(|\beta| = 4\), \(\texttt{sum-swap}\) 
 		0 & 0 & 0 & 1 & 0 & 0 & 0 \\
 	\end{bmatrix}
 \end{equation}
-Which clearly has a similar structure to the \(|\alpha|=|\beta|=3\) array: diagonal sub-matrices in the top right and bottom left corners, and zeros everywhere else.
+This clearly has a similar structure to the \(|\alpha|=|\beta|=3\) array: diagonal sub-matrices in the top right and bottom left corners, and zeros everywhere else.
 
 Now, imagine trying to reconstruct the second relation array from the first, only knowing its type signature.
 For each entry, we consider the corresponding value, and try to look up an appropriate corresponding entry in the first array.
@@ -986,15 +986,15 @@ The parts of these variables corresponding to type variable \(\alpha\) are equal
 Similar to before, we can look up any any entry in the first array where \(x = \texttt{(left \(a\))}\), \(y = \texttt{(right \(b\))}\), and we also impose that \(a = b\).
 These correspond to the entries along the top right diagonal of the first array.
 These entries all have weight \(1\), so we adopt that weight here.
-Similarly, any entry in the top-right where \(a \ne b\), such as \(x = \texttt{(left \(\mathtt{1_3}\))}\) and \(y = \texttt{(right \(\mathtt{2_3}\))}\), has a weight of \(0\) which we adopt.
+Similarly, any entry in the top-right where \(a \ne b\), such as \(x = \texttt{(left \(\mathtt{1_3}\))}\) and \(y = \texttt{(right \(\mathtt{2_3}\))}\), has a weight of \(0\) that we adopt.
 
 More generally, for each entry in the second array, we consider the \emph{equality pattern} of the values at that entry, and look up an entry with the same equality pattern in the first array.
 When we know the non-variable-typed part of values (such as the top-level \(\texttt{left}\) or \(\texttt{right}\) in the previous example),
 we want to look up an entry whose non-variable-typed part is the same.
 When we know the variable-typed part of values, we consider whether they are equal or disequal to other variable-typed parts at the same entry,
-and look up an entry which has the same equalities and disequalities.
+and look up an entry that has the same equalities and disequalities.
 Because in semiringKanren the only primitive relations on variable-typed values are direct equality or disequality,
-considering soley the equalities/disequalities between the variable-typed parts of a value is sufficient.
+considering solely the equalities/disequalities between the variable-typed parts of a value is sufficient.
 
 Specifically, equality patterns are defined in terms of \emph{shells} and \emph{holes} of value environments.
 The shell of a value environment is the non-variable-typed part, the holes in a value environment are the variable-typed parts.
@@ -1102,7 +1102,7 @@ regardless of the size of \(\alpha\), because idempotence gives us \(1 + 1 = 1\)
 \section{Proofs for Non-Monomorphizing Semantics}
 
 We now aim to prove that this compilation scheme works as intended.
-Throughout this section, we assume that we are working over a commutative semiring with multiplicative identity \(1\), additive identity and multiplicative annihlator \(0\),
+Throughout this section, we assume that we are working over a commutative semiring with multiplicative identity \(1\), additive identity and multiplicative annihilator \(0\),
 and idempotent addition (so \(a + a = a\)).
 
 \subsection{Equality Patterns Preserve Weight}
@@ -1118,7 +1118,7 @@ and idempotent addition (so \(a + a = a\)).
 	\end{array} \]
 \end{definition}
 
-Shells are very similar to values, but additionally have holes which are associated with a single, non-composite type variable.
+Shells are similar to values, but additionally have holes that are associated with a single, non-composite type variable.
 
 Given a concrete value with a corresponding type (including type variables), we can find its shell as follows:
 \begin{equation}
@@ -1143,7 +1143,7 @@ We use \(\holes_{\alpha \in \tau}(v)\) to denote the values of the holes corresp
 \end{aligned}
 \end{equation}
 
-We also have versions of these functions which apply to \emph{value environments} (notated as \(\delta\) in the semantics) with corresponding type environments.
+We also have versions of these functions that apply to \emph{value environments} (notated as \(\delta\) in the semantics) with corresponding type environments.
 \begin{equation}
 \begin{aligned}
 	\envshell_{\emptyset}() &= \emptyset \\
@@ -1284,8 +1284,8 @@ The third condition boils down to ``if pairs of holes are equal for one value en
 	This applies to all pairs of holes at any indices, at for any type variable, thus we have \(\delta_2 \eqpatD \delta_1\), and so \(\eqpatD\) is symmetric.
 
 	Now assume \(\delta_1 \eqpatD \delta_2\) and \(\delta_2 \eqpatD \delta_3\), and aim to show \(\delta_1 \eqpatD \delta_3\).
-	Choose type variable \(\alpha\), and \(\alpha\)-holes at indices \(i, j\) for each value environment: \(h_1, k_1\), \(h_2, k_2\), and \(h_3, k_3\).
-	There are two cases to consider: \(h_1 = k_1\) and \(h_2 = k_2\) and \(h_3 = k_3\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\) and \(h_3 \ne k_3\).
+	Let \(\alpha\) be a type variable, and choose \(\alpha\)-holes at indices \(i, j\) for each value environment: \(h_1, k_1\), \(h_2, k_2\), and \(h_3, k_3\).
+	We have two cases to consider: \(h_1 = k_1\) and \(h_2 = k_2\) and \(h_3 = k_3\), or \(h_1 \ne k_1\) and \(h_2 \ne k_2\) and \(h_3 \ne k_3\).
 	Any other cases do not satisfy the equality pattern conditions.
 	In the first case, we have \(h_1 = k_1\) and \(h_3 = k_3\).
 	In the second case, we have \(h_1 \ne k_1\) and \(h_3 \ne k_3\).
@@ -1310,7 +1310,7 @@ The third condition boils down to ``if pairs of holes are equal for one value en
 	by applying the trivial part of lemma \ref{lem:values-shells-holes}.
 	By assumption, \(\delta_1 \eqpatD \delta_2\), so \(\envshell_\Delta(\delta_1) = \envshell_\Delta(\delta_2)\).
 	Because the envshells of \(\delta_1\) and \(\delta_2\) are equal, the shells of each variable in \(\delta_1\) and \(\delta_2\) are equal.
-	So for any valid variable \(x : \tau'\), \(\shell_{\tau'}(\den{x}(\delta_1)) = \shell_{\tau'}(\den{x}(\delta_2))\).
+	Thus for any valid variable \(x : \tau'\), \(\shell_{\tau'}(\den{x}(\delta_1)) = \shell_{\tau'}(\den{x}(\delta_2))\).
 	This cleanly extends to arbitrary values.
 	Thus \(\shell_\tau(\den{v_1}(\delta_1)) = \shell_\tau(\den{v_1}(\delta_2))\) and \(\shell_\tau(\den{v_2}(\delta_1)) = \shell_\tau(\den{v_2}(\delta_2))\).
 	By transitivity of equality, we therefore know \(\shell_\tau(\den{v_1}(\delta_2)) = \shell_{\tau}(\den{v_2}(\delta_2))\).
@@ -1401,7 +1401,7 @@ This generalizes cleanly to type environments:
 	\end{itemize}
 \end{definition}
 
-Which makes it easy to count for relations:
+This makes it easy to count type variable occurrences for relations:
 
 \begin{definition}
 	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in relation \(R\)}, denoted \(\#_\alpha R\),
@@ -1422,10 +1422,10 @@ Which makes it easy to count for relations:
 	For the equality pattern to continue to hold, we must have \(\shell(v_1) = \shell(v_2)\).
 	It remains to find appropriate values for the holes of \(v_2\).
 
-	Choose \(\alpha \in \tau\), and let \(i\) be the smallest index such that \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\) does not yet have an assigned value.
+	Let \(\alpha \in \tau\), and let \(i\) be the smallest index such that \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\) does not yet have an assigned value.
 	For \(\delta_1\), try to find index \(j < i\) such that \(\envholes_{\alpha \in \Delta, \tau}(\delta_1)[i] = \envholes_{\alpha \in \Delta, \tau}(\delta_1)[j]\).
 	If such \(j\) exists, assign the value of \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[j]\) to \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\).
-	If such \(j\) does not exist, choose an \(\sigma_2(\tau)\)-typed value which does not yet occur in \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)\),
+	If such \(j\) does not exist, choose an \(\sigma_2(\tau)\)-typed value that does not yet occur in \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)\),
 	and assign it to \(\envholes_{\alpha \in \Delta, \tau}(\delta_2)[i]\).
 	Note that it is always possible to find such a value: \(|\sigma_2(\alpha)| \ge \#_\alpha \Delta,\tau\),
 	so \(\sigma_2(\alpha)\) has at least as many distinct values as there are \(\alpha\)-typed holes.
@@ -1589,7 +1589,7 @@ Which makes it easy to count for relations:
 	\end{itemize}
 \end{proof}
 
-The large-enough condition on \(\gamma\) is quite restrictive.
+The large-enough condition on \(\gamma\) is restrictive.
 For example, given \(\Delta \vdash x : \alpha\) with \(\sigma_1(\alpha) = 1\) and \(\sigma_2(\alpha) = 2\),
 then \(\gamma\) is not allowed to hold relations like \(\texttt{two-valued}\).
 Here, \(\texttt{(two-valued \(x\))}\) would fail under \(\delta_1\) but succeed under \(\delta_2\).
@@ -1689,7 +1689,7 @@ The deconstruction process does not need to use \(\texttt{factor}\), so by lemma
 Thus successes of the deconstruction process have weight \(1\), which is the multiplicative identity, so there is no effect on the weight of the top-level \(\texttt{conj}\).
 Overall, we can ignore this subgoal in our reasoning going forward, other than assuming that the environment has been properly deconstructed into ancillary variables.
 
-Similarly note that with how \(\envholes\) operates on type environments, it may process holes which are not valid given the current \(\envshell\) structure.
+Similarly note that with how \(\envholes\) operates on type environments, it may process holes that are not valid given the current \(\envshell\) structure.
 For example, consider the type environment
 \begin{equation}
 	\Delta = x : \texttt{(Sum \(\alpha\) \(\alpha\))}
@@ -1703,10 +1703,10 @@ In practice, this is not an issue.
 It simply means that during the deconstruction process, no constraints are imposed on the ancillary variables corresponding to these holes.
 While the ``equality patterning'' part of the generated code may fail for certain assignments of these ancillary variables,
 it is guaranteed to succeed for at least one assignment in the outer \(\texttt{fresh}\).
-It is clear that for any two variables of the same type, there must have at least one value for which they are equal.
+This is because for any two variables of the same type, there must have at least one value for which they are equal.
 Nowhere in the generated code causes a failure for these ``unconstrained'' ancillary variables,
 so at least the first subcase of the equality patterning \(\texttt{disj}\) is guaranteed to succeed for at least one assignment.
-The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempotent and commutative, so if there are multiple such successes, the overall weight is not affected.
+The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempotent and commutative, so if there are multiple such successes, the overall weight is not effected.
 
 \begin{lemma}
 	\label{lem:enforce_eqpat}
@@ -1739,7 +1739,7 @@ The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempoten
 	Similarly, for any \(\alpha\), for any holes \(h_1, k_1\) at indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_1)\),
 	and holes \(h_2, k_2\) at the same indices \(i, j\) in \(\envholes_{\alpha \in \Delta}(\delta_2)\),
 	then either \(h_1 = k_1\) and \(h_2 = k_2\), or \(h_1 \ne k_1\) or \(h_2 \ne k_2\).
-	Thus exactly one branch of the \(\texttt{disj}\) succeeds for each \(\alpha, i, j\) (and we can ignore holes which do not ``exist'' here), so all such \(\texttt{disj}\)s have weight 1.
+	Thus exactly one branch of the \(\texttt{disj}\) succeeds for each \(\alpha, i, j\) (and we can ignore holes that do not ``exist'' here), so all such \(\texttt{disj}\)s have weight 1.
 	We have also argued that deconstructing \(\Delta_1, \Delta_2\) into ancillary variables succeeds, and relatedly that we can ignore the outer \(\texttt{fresh}\).
 	Thus we have a conjunction of sub-goals of weight 1, which is the multiplicative identity, so the total weight is 1.
 
@@ -1770,7 +1770,7 @@ The \(\texttt{fresh}\) sums over all such assignments; our semiring is idempoten
 	In either case, if \(\delta_1 \not\eqpatD \delta_2\), then \(\den{\enforceeqpatD(\Delta_1; \Delta_2)}(\gamma;\delta_1,\delta_2;\sigma) = 0\).
 \end{proof}
 
-Note that \(\gamma\) and \(\sigma\) are never applied in the generated code, so they have no affect on the final weight.
+Note that \(\gamma\) and \(\sigma\) are never applied in the generated code, so they have no effect on the final weight.
 
 We can now compile relation calls.
 Within context \(\gamma : \Gamma\), suppose that we want to compile large-enough  \(\texttt{(\(R_{\sigma_1}\) \(\vec v\))}\). 
@@ -1803,7 +1803,7 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 	First consider subcases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) fails.
 	We know \(0\) is multiplicative annihilator, so these cases all result in weight \(0\).
 
-	Now consider subcases cases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds.
+	Now consider subcases of the outer \(\texttt{fresh}\) where \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds.
 	Within the \(\texttt{fresh}\), our environment is \(\delta_1, \delta_2 : \Delta_1, \Delta_2\).
 	Because we assume \(\enforceeqpatD(\Delta_1;\Delta_2)\) succeeds, by lemma \ref{lem:enforce_eqpat} we know \(\delta_1 \eqpatD \delta_2\).
 	From this, along \(R_{\sigma_1}\) and \(R_{\sigma_2}\) being large-enough by assumption/definition,
@@ -1835,7 +1835,7 @@ Given \(\Gamma; \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt\), we compile as f
 Theorem \ref{thm:compile-poly} assures us that compiled large-enough relation calls work as expected.
 Theorem \ref{thm:eqpat-weight} assures us that we can construct large-enough relations to begin with.
 In practice, not all polymorphic relations need to be large-enough.
-When possible, we prefer compiling relation calls as outlined here, but we can always resort to monomorphization when dealing with relation calls which are not large-enough.
+When possible, we prefer compiling relation calls as outlined here, but we can always resort to monomorphization when dealing with relation calls that are not large-enough.
 As such, this method is not truly ``non-monomorphizing.''
 That said, anecdotally many relation calls \emph{do} end up being large-enough; this method is non-monomorphizing ``most of the time.''
 
@@ -1843,7 +1843,7 @@ That said, anecdotally many relation calls \emph{do} end up being large-enough; 
 
 \section{miniKanren}
 
-The miniKanren\cite{byrd2012} family of languages consists of relational programming languages which are often shallowly-embedded within a host language (such as Scheme).
+The miniKanren\cite{byrd2012} family of languages consists of relational programming languages that are often shallowly-embedded within a host language (such as Scheme).
 Relations in miniKanren are defined in terms of \emph{goals}, which usually include: value unification, fresh variable introduction, and program branching.
 Languages in the miniKanren family often excel at code generation based on relational interpreters, with quine generation being a particularly compelling example.
 As the name may imply, semiringKanren draws extensive inspiration from miniKanren.
@@ -1861,26 +1861,26 @@ Disequality constraints are supported by semiringKanren, and are considerably ea
 Implementations of miniKanren are usually based on top-down searches based on filtering and combining streams of potential solutions.
 With semiringKanren, we use a different approach based on bottom-up fact generation, where new facts are gradually derived from existing ones.
 
-As of writing, semiringKanren does not support recursive data types, and therefore has not yet demonstrated the ability to generate quines.
+As of writing, semiringKanren does not support recursive data types, and has not generated any quines.
 
 \section{Datalog}
 
 Datalog\cite{green2007} is a family of relational programming languages based on finding the \emph{least fixed point} of a database of facts.
-Relations in datalog are defined in terms of Horn clauses (disjunctions of conditions which are used to determine a fact).
-Datalog queries are executed by repeatedly deriving new facts using these clauses until no new facts are derived, in a process referred to as \emph{bottom-up evaluation}.
-This has the advantage of being able to compute queries which may not terminate in top-down relational languages.
+Relations in datalog are defined in terms of Horn clauses (disjunctions of conditions that are used to determine a fact).
+Datalog queries are executed by repeatedly deriving new facts using these clauses until no new facts are derived, in a process called \emph{bottom-up evaluation}.
+This has the advantage of being able to compute queries that may not terminate in top-down relational languages.
 The execution model of semiringKanren is directly based on this bottom-up approach.
 
 While many models of relational algebra are boolean (relations either directly succeed or directly fail), some datalog variants introduce the concept of \emph{annotated relations}.
 These generalize relations to \(K\)-relations, where facts are annotated with elements from a commutative semiring (a set with multiplication and addition operations, where multiplication distributes over addition).
 These annotations can be used to represent, for example, bag relations (where a fact may occur multiple times), or probabilistic databases (where facts may occur with some probability).
-In particular, it is common to use these annotations to track \emph{provenance}, or the reasoning behind the derivation of each fact.
+In particular, these annotations are sometimes used to track \emph{provenance}, or the reasoning behind the derivation of each fact.
 The implementation of semiringKanren is designed to support computation over any valid semiring.
 
-Dyna\cite{francislandau2024} is a descendent of datalog that supports \emph{aggregators}, which permit programmers to choose from a larger set of operations on weights.
+Dyna\cite{francislandau2024} is a descendent of datalog supporting \emph{aggregators}, which permit programmers to choose from a larger set of operations on weights.
 
 Traditionally, datalog has only a string or symbol type.
-Other types are constructed by defining unary relations which only succeed for a subset of symbol values\cite{fruhwirth1991}.
+Other types are constructed by defining unary relations that only succeed for a subset of symbol values\cite{fruhwirth1991}.
 In particular, this permits subtyping relations.
 This differs from semiringKanren, which uses algebraic data types.
 Some datalog implementations may also support numeric types, such as integers or floating-point numbers.
@@ -1888,11 +1888,11 @@ Some datalog implementations may also support numeric types, such as integers or
 \section{Weighted Logic Languages}
 
 Datalog is not the only relational programming language that supports annotating facts with weights.
-In particular, there are several variants of miniKanren which support probabilistic logic.
+In particular, there are variants of miniKanren that support probabilistic logic.
 The slpKanren\cite{byrd2013} variant is based on stochastic logic, which generalizes stochastic grammars and requires disjunctions to be annotated with probabilities.
 The probKanren\cite{zinkov2021} variant allows probabilistically drawing variables from both continuous and discrete distributions,
 and performs probabilistic inference using a Sequential Monte Carlo method.
-There is also a variant based on weighted model counting\cite{donahue2022}, which tracks the likelihood of facts across several possible distributions.
+A variant based on weighted model counting\cite{donahue2022} also exists, which tracks the likelihood of facts across possible distributions.
 Of these variants, semiringKanren is most similar to slpKanren (when computing over the usual semiring for real numbers).
 
 Probabilistic logic programming has also been widely explore outside of the miniKanren family of languages\cite{riguzzi2022}.
@@ -1908,22 +1908,22 @@ Then, a generalized form of matrix multiplication to combine these arrays to rea
 More specifically, it aligns the matrices according to unexposed variables, multiplies them element-wise, then sums over the unexposed variable.
 After the process is complete, the resulting array is a plot of potential solutions, up to some level of precision depending on the initial discretization.
 
-This method is very similar to how goals in semiringKanren are evaluated.
+This method is similar to how goals in semiringKanren are evaluated.
 In semiringKanren, using a fresh variable to call multiple relations in conjunction is mathematically equivalent to the generalized array multiplication method used for pixel arrays.
 However, the pixel array method is a discrete approximation of continuous math, and in particular may produce false positives.
-Because semiringKanren computes algebraic data types which are already discrete, it has no such accuracy issues.
+Because semiringKanren computes algebraic data types that are already discrete, it has no such accuracy issues.
 Furthermore, it can express more complicated relational joins than directly aligning variables.
 
 \section{SAT Compilation}
 
 The semiringKanren language supports evaluation via SAT solving, which can greatly improve efficiency\cite{volkov2025}.
-FormuLog\cite{bembenek2018} is a datalog variant which uses SMT solvers to evaluate logical formulas, as an extension to the standard bottom-up datalog evaluation strategy.
-Other relational programming engines which support SAT evaluation include Kodkod\cite{torlak2007}, Paradox, and MACE2.
+FormuLog\cite{bembenek2018} is a datalog variant that uses SMT solvers to evaluate logical formulas, as an extension to the standard bottom-up datalog evaluation strategy.
+Other relational programming engines that support SAT evaluation include Kodkod\cite{torlak2007}, Paradox, and MACE2.
 
 \section{Polymorphic Logic Languages}
 
 We call a typed logic programming language \emph{polymorphic} when it can define a single relation that can operate on several types.
-Polymorphic languages roughly fall into two categories: languages with \emph{parametric} polymorphism, and languages with \emph{ad-hoc} polymorphism.
+Polymorphic languages usually fall into two categories: languages with \emph{parametric} polymorphism, and languages with \emph{ad-hoc} polymorphism.
 Languages with \emph{parametric} polymorphism use \emph{type variables} to represent unknown types.
 In general, operations other than assignment are not permitted on values of a variable type.
 Languages with \emph{ad-hoc} polymorphism usually have some means of detecting the type of values, and using this information to potentially perform different operations depending on the type.
@@ -1932,7 +1932,7 @@ Relational programming languages supporting parametric polymorphism include Flix
 Both of these languages use \emph{monomorphization} to implement polymorphism,
 which means generating a version of each function or relation for each type it gets called with.
 We also support parametric polymorphism in semiringKanren, but do so \emph{without} monomorphization---we believe this to be first for bottom-up relational programming languages.
-It is worth noting that Flix is also supports computing over arbitrary semirings.
+Note that Flix is also supports computing over arbitrary semirings.
 
 Datalog variants frequently exhibit ad-hoc polymorphism.
 We have already discussed how datalog programs that implement types as unary relations often exhibit a form of subtyping.
@@ -1943,10 +1943,10 @@ when a polymorphic relation is called.
 This is different from monomorphization, as only these unification and comparison relations are specialized.
 While the canonical implementation of Mercury is based on top-down search,
 Mercury has also been implemented on the bottom-up Aditi\cite{vaghanl1994} deductive database system.
-It is unclear how exactly the implementation of polymorphism was translated,
+How exactly the implementation of polymorphism was translated is unclear,
 but this may be a prior instance of non-monomorphizing polymorphism for a bottom-up relational programming language.
 
-It is worth noting that many top-down relational programming languages, including miniKanren, are untyped and thus support a form of polymorphism by default.
+Note that many top-down relational programming languages, including miniKanren, are untyped and thus support a form of polymorphism by default.
 
 \section{Other Related Work}
 
@@ -1970,7 +1970,7 @@ Finally, we introduce the notions of \emph{equality patterns} and \emph{large-en
 and show how these can be used to compile polymorphic programs into non-polymorphic ones, with minimal monomorphization.
 
 We feel that the miniKanren approach to relational programming lends naturally to these developments.
-In particular, microKanren-style \(\texttt{conj}\) and \(\texttt{disj}\)-based syntax leads to a very straightforward denotational semantics.
+In particular, microKanren-style \(\texttt{conj}\) and \(\texttt{disj}\)-based syntax leads to a straightforward denotational semantics.
 Furthermore, the flexibility to freely nest goals makes it straightforward to express the nontrivial patterns used when compiling polymorphic programs into non-polymorphic ones.
 
 We hope our new method of implementing polymorphism may find applications in relational languages beyond semiringKanren.
@@ -1986,15 +1986,15 @@ The OCaml implementation of semiringKanren is available on GitHub\footnote{semir
 In this work, we present a method of counting type variable occurrences to determine when a relation is large-enough, but acknowledge that it is not sufficient in all cases.
 It remains to find a fully-general method for calculating the necessary type variable sizes for a relation to be large-enough.
 As we have briefly discussed, such a method may involve relation calls providing information about their own argument size requirements during the calculation process.
-In order to handle recursive calls, a fixpoint process may me necessary (as it is in normal program execution).
+To handle recursive calls, a fixpoint process may me necessary (as it is in normal program execution).
 
 \subsection{Higher-Order Relations}
 
-It is relatively rare for relational programming languages to support higher-order relations (relations which take other relations as arguments).
+Relational programming languages to support higher-order relations (relations that take other relations as arguments) are relatively rare.
 Existing work in the space includes \(\lambda\)Prolog\cite{felty1988} and \(\lambda\)Kanren\cite{weixi2020}.
 
 With the \(\texttt{option-map}\) example, we have shown that higher-order relations can be encoded as products if they are used affinely (they can be called either zero times or once).
-It is not immediately clear how powerful this technique is.
+The power of this technique is not immediately clear.
 In particular, once a relation is encoded as a product, it may be possible to effectively duplicate it (likely using a new language construct) to get more calls.
 
 \subsection{Recursive Types}
@@ -2002,35 +2002,36 @@ In particular, once a relation is encoded as a product, it may be possible to ef
 Thus far, semiringKanren does not support recursive types.
 This is very limiting.
 For example, semiringKanren cannot represent arbitrary lambda calculus terms and thus perform the traditional quine generation of miniKanren languages.
-In practice, recursive types should be able to be arbitrarily large, which seems incompatible with the finite array semantics semiringKanren currently uses.
+In practice, recursively-typed values may be arbitrarily large, which seems incompatible with the finite array semantics used by semiringKanren.
 
 We are aware of three potential ways to bring recursive data types to semiringKanren.
 First, if semiringKanren gains full support for higher-order relations,
 it may become possible to express recursive types using Church-style encodings (given that semiringKanren already supports polymorphism).
 
-Secondly, we may be able to support \emph{gas-recursive types}, which are recursive types equipped with an additional size parameter.
+Secondly, we may be able to add support \emph{gas-recursive types}, which are recursive types equipped with an additional size parameter.
 This may make it possible to calculate maximum sizes for types, so we can find an upper bound on the sizes of the relation arrays.
 This is analogous to the ``vector'' type common in dependently-typed programming languages, where the type holds a number corresponding to the length.
 
 Finally, it may be possible to use a system based on defunctionalization and refunctionalization to eliminate recursive data types, as in ``Exact Recursive Probabilistic Programming''\cite{chiang2023}.
 From a preliminary investigation, it appears possible to translate the de/refunctionalized programs presented in that paper to semiringKanren.
-However, it remains to be seen if the approach fully generalizes to ``derelationalization'' and ``rerelationalization'' for arbitrary semiringKanren programs.
+Tt remains to be seen if the approach fully generalizes to ``derelationalization'' and ``rerelationalization'' for arbitrary semiringKanren programs.
 
 \subsection{Semiring Fixpoint Convergence}
 
-It is not yet clear when semiringKanren programs terminate, and when they do not.
-Relatedly, it is not clear whether or not semiringKanren is Turing-complete.
-Of course, these sorts of characteristics may depend on the specific semiring in use.
+We have not yet investigated termination in semiringKanren.
+Relatedly, we do not know if semiringKanren is Turing-complete.
+These properties may depend on the specific semiring in use.
 
-There is a large body of related work about datalog in the sphere.
-For example, it is known that the base datalog language always terminates and can express any polynomial-time algorithm\cite{madsen2020}, but this does not hold for many datalog variants.
+Properties of semirings have been widely explored for datalog.
+For example, the base datalog language is known to always terminate and can express any polynomial-time algorithm\cite{madsen2020}.
+This does not hold for many datalog variants.
 Datalog variants computing over provenance semirings are also known to terminate\cite{green2007}.
-It has been proven that certain algebraic properties of semirings correspond to convergence properties in datlog\cite{khamis2024}.
-It remains to see whether these hold for semiringKanren.
+Furthermore, certain algebraic semiring properties correspond to convergence properties in datalog\cite{khamis2024}.
+We have not investigated whether the same properties apply to semiringKanren.
 
-Of particular interest is the ability to negate goals.
-For semirings which are also rings (have additive inverses), we can express ``not'' with \(\texttt{(factor -1)}\).
-For example, for the usual semiring over real numbers, we can express disequality as follows:
+In semiringKanren, we can sometimes negate goals.
+For semirings that are also rings (have additive inverses), we can express ``not'' with \(\texttt{(factor -1)}\).
+For the usual semiring over real numbers, we can express disequality as follows:
 \begin{equation}
 \begin{aligned}
 	& \texttt{(defrel (=/= (\(x : \alpha\)) (\(y : \alpha\)))} \\
@@ -2044,7 +2045,7 @@ For example, for the usual semiring over real numbers, we can express disequalit
 This roughly reads as ``succeed always, but negate the success when \(x = y\).''
 Manually computing, this gives us an off-diagonal matrix as expected for \(\texttt{=/=}\).
 While this particular example terminates, programs with negation in general may not.
-It is also unclear what the ``meaning'' of negation is here.
+The ``meaning'' of negation is unclear here.
 Relational programming languages supporting negation are uncommon, and use a variety of approaches.
 Negation has been implemented in Datalog using a three-valued semiring, and with ``stratified'' approaches (where different rules are evaluated at different times) to evaluation.
 Several miniKanren variants support \(\texttt{noto}\) goals, including stableKanren\cite{guo2023} which is based on stable model semantics,
@@ -2063,13 +2064,14 @@ It may also be worthwhile to explore existing applications of datalog, and see w
 
 \subsection{Alternative Evaluation Strategies}
 
-We have shown evaluation strategies for semiringKanren based on operations on semiring arrays, and translate to SAT problems.
-We believe there are several other evaluation strategies worth exploring.
+We have shown evaluation strategies for semiringKanren based on operations on semiring arrays.
+In prior work, we have shown an evaluation strategy based on translation to SAT\cite{volkov2025}.
+We believe there are other evaluation strategies worth exploring.
 
 For semiringKanren's array-based evaluation, the arrays it uses are highly structured.
 The diagonal and off-diagonal arrays used for equality and disequality are a clear example.
 Thus, using dense arrays is likely an unnecessary use of space.
-There are methods which exploit these sorts of structures in arrays/tensors to enable parallelization and achieve significant speedups\cite{ghorbani2025}.
+Methods exist that exploit these sorts of structures in arrays/tensors to enable parallelization and achieve significant speedups\cite{ghorbani2025}.
 Implementing a backend based on such a system may make larger problems and programs tractable for semiringKanren.
 
 We already have an practical method for compiling semiringKanren programs to SAT problems\cite{volkov2025}.

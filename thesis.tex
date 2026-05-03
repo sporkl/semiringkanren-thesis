@@ -1607,7 +1607,52 @@ this allows us to remove all monomorphized instances larger than the smallest la
 In practice, implementation of this compilation scheme is verbose, so we reason here with a simplified/idealized version of the process.
 Rather than a formal demonstration of correctness, the following proofs aim to sketch an intuitive idea of why this method works.
 
-We define a function to generate code to enforce equality patterns between two sub-environments.
+\begin{lemma}
+	\label{lem:no-factor-weight}
+	Let \(\Gamma; \Delta \vdash g \wt\).
+	If \(g\) does include not include \(\mathtt{factor}\) or relation calls, then for any valid \(\gamma, \delta, \sigma\), \(\den{g}(\gamma;\delta;\sigma)\) either has weight \(0\) or \(1\).
+\end{lemma}
+\begin{proof}
+	Proof by induction on \(g\).
+	\begin{itemize}
+		\item \(g = \texttt{(conj \(g_1\) \(g_2\))}\).
+			By the inductive hypothesis, \(\den{g_1}(\gamma;\delta;\sigma) = 0 \text{ or } 1\), and \(\den{g_2}(\gamma;\delta;\sigma) = 0 \texttt{ or } 1\).
+			Thus the weight of \(\den{g}(\gamma;\delta;\sigma)\) is one of: \(0 * 0\), \(0 * 1)\), \(1 * 0\), and \(1 * 1\).
+			Because \(0\) is the multiplicative annihlator and \(1\) is the multiplicative identity, the first three cases are equal to \(0\) and the last case is equal to \(1\).
+		\item \(g = \texttt{(disj \(g_1\) \(g_2\))}\).
+			By the inductive hypothesis, \(\den{g_1}(\gamma;\delta;\sigma) = 0 \text{ or } 1\), and \(\den{g_2}(\gamma;\delta;\sigma) = 0 \texttt{ or } 1\).
+			Thus the weight of \(\den{g}(\gamma;\delta;\sigma)\) is one of: \(0 + 0\), \(0 + 1)\), \(1 + 0\), and \(1 + 1\).
+			Because \(0\) is the additive identity, the first case is equal to \(0\), and the second and third cases are equal to \(1\).
+			Because we require \(+\) to be idempotent, the fourth case is equal to \(1\).
+		\item \(g = \texttt{(fresh ((\(x : \tau\))) \(g'\))}\).
+			Because the inductive hypothesis applies for any valid \(\delta\), we know \(\den{g'}(\gamma;\delta, x \mapsto v;\sigma) = 0 \texttt{ or } 1\) for all \(v\).
+			Our semiring is commutative, so we can rearrange the sum corresponding to the \(\texttt{fresh}\) as follows:
+			\begin{equation}
+				(0 + \dots) + (1 + \dots)
+			\end{equation}
+			We know the sum must contain at least one summand (because the smallest semiringKanren type is \(\texttt{Unit}\), so we at least have \(v = \texttt{sole}\)),
+			but we could potentially have either no \(0\)s or no \(1\)s in the sum.
+			If there are no \(1\)s in the sum, then we have:
+			\begin{equation}
+				0 + \dots = 0
+			\end{equation}
+			If we have at least one \(1\) in the sum, then we have:
+			\begin{equation}
+				(0 + \dots) + (1 + \dots) = 1
+			\end{equation}
+			This holds because we require addition to be idempotent (so \(1 + 1 = 1\)), and any \(0\)s (if they occur) are the additive identity.
+		\item \(g = \texttt{(== \(v_1\) \(v_2\))}\).
+			We know \(\den{g}(\gamma;\delta;\sigma) = 0 \text{ or } 1\) by defininition in the denotational semantics.
+		\item \(g = \texttt{(=/= \(v_1\) \(v_2\))}\).
+			We know \(\den{g}(\gamma;\delta;\sigma) = 0 \text{ or } 1\) by defininition in the denotational semantics.
+		\item \(g = \texttt{(\(R\) \(v\) \(\dots\))}\).
+			By hypothesis, this case does not occur.
+		\item \(g = \texttt{(factor \(r\))}\).
+			By hypothesis, this case does not occur.
+	\end{itemize}
+\end{proof}
+
+We now define a function to generate code to enforce equality patterns between two sub-environments.
 Because the generated code should work with potentially any value sub-environments, we define the function in terms of the type sub-environments.
 Let \(\Delta_1 = \sigma_1(\Delta)\), \(\Delta_2 = \sigma_2(\Delta)\), and \(\alpha, \dots \in \Delta\).
 For convenience, assume \(\envshell\) and \(\envholes\) operate on type sub-environments like \(\Delta_1\), \(\Delta_2\)
@@ -1640,8 +1685,8 @@ First note that deconstructing \(\Delta_1\) and \(\Delta_2\) into ancillary vari
 when the ancillary variable values in the current environment do not match up with the current values inhabiting \(\Delta_1\) and \(\Delta_2\).
 When this happens, the whole \(\texttt{conj}\) fails, and so no weight is added into the summation corresponding to the  outer \(\texttt{fresh}\).
 This means that we can ignore these failing cases in our reasoning, and only consider cases where deconstructing \(\Delta_1\) and \(\Delta_2\) succeeds.
-The deconstruction process does not need to use \(\texttt{factor}\), so it either has weight 1 or 0 (this can easily be proven by induction over goals).
-Thus when it succeeds it has weight 1, which is the multiplicative identity, so it does not affect the weight of the top-level \(\texttt{conj}\).
+The deconstruction process does not need to use \(\texttt{factor}\), so by lemma \ref{lem:no-factor-weight}, it either has weight \(0\) or \(1\).
+Thus successes of the deconstruction process have weight \(1\), which is the multiplicative identity, so there is no effect on the weight of the top-level \(\texttt{conj}\).
 Overall, we can ignore this subgoal in our reasoning going forward, other than assuming that the environment has been properly deconstructed into ancillary variables.
 
 Similarly note that with how \(\envholes\) operates on type environments, it may process holes which are not valid given the current \(\envshell\) structure.

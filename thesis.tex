@@ -260,7 +260,7 @@ When we evaluate this over the min-tropical semiring with \(w = 1\), we get the 
 	\textrm{Relations} & Rel & ::= & \texttt{(defrel (\(R\) (\(x:\tau\)) \(\dots\)) \(g\)) } \\
 	\textrm{Goals} & g & ::= & \texttt{(conj \(g\) \(g\))} \\
 	& & | & \texttt{(disj \(g\) \(g\))} \\
-	& & | & \texttt{(fresh ((\(x:\tau\)) \(\dots\)) \(g\))} \\
+	& & | & \texttt{(fresh ((\(x:\tau\))) \(g\))} \\
 	& & | & \texttt{(== \(v\) \(v\))} \\
 	& & | & \texttt{(=/= \(v\) \(v\))} \\
 	& & | & \texttt{(\(R\) \(v\) \(\dots\))} \\
@@ -490,7 +490,7 @@ In the denotational semantics for values, when we reach a variable, we apply \(\
 The core semiringKanren semantics is that of goals.
 For the denotation of goals, we take a \emph{relation environment} \(\gamma\) mapping relation names to precomputed relations (whose types correspond to \(\Gamma\)), as well as a value environment \(\delta\).
 The relational environment \(\gamma\) is valid if for any \((R : \tau_1,\dots,\tau_n \to) \in \Gamma\),
-then the relation in \(\gamma\) corresponding to relation name \(R\) maps indices drawn from \(\den{\tau_1} \times \dots \times \den{\tau_n}\) to weights drawn from \(\mathbb{K}\).
+the relation in \(\gamma\) corresponding to relation name \(R\) maps indices drawn from \(\den{\tau_1} \times \dots \times \den{\tau_n}\) to weights drawn from \(\mathbb{K}\).
 
 The denotation of goals as shown in figure \ref{fig:goals-semantics} computes a weight depending on the relation environment and current value environment.
 Goals can be understood as operating on arrays indexed by \(\delta\) and parameterized by \(\gamma\).
@@ -502,7 +502,7 @@ The \(\texttt{fresh}\) goal sums along one dimension of a rank-\((n + 1)\) array
 \begin{figure}
 \begin{gather*}
 	\den{\texttt{(defrel (\(R\) (\(\vec x : \vec \tau\)) g)}} (\gamma) =
-	(\vec i) \mapsto \den{g} (\gamma; \vec x \mapsto \den{\vec i};\sigma) \\
+	(\vec i) \mapsto \den{g} (\gamma; \vec x \mapsto \den{\vec i}) \\
 	\den{\textit{Rel}_1, \dots, \textit{Rel}_Q} = \;
 	\mathrel{\textrm{fix}} \gamma \mathrel{\textrm{in}} R_1 \mapsto \den{\textit{Rel}_1} (\gamma), \dots, R_Q \mapsto \den{\textit{Rel}_Q} (\gamma)
 \end{gather*}
@@ -512,12 +512,12 @@ The \(\texttt{fresh}\) goal sums along one dimension of a rank-\((n + 1)\) array
 
 We define the denotation of a relation to be a map from elements drawn from the types of its arguments, to weights.
 Thus, the elements of \(\gamma\) are precomputed relation denotations.
-We compute this denotation by evaluating the goal structure of the relation for all possible values inhabiting the argument types
+We compute this denotation by evaluating the goal structure of the relation for all possible values inhabiting the argument types.
 We now define the denotation of a complete program to be the least fixed point of the denotation of all relations.
 We use \(\gamma\) to repeatedly compute the denotation of each relation to get a new \(\gamma\), and repeat this process until \(\gamma\) stabilizes.
 In practice, \(\gamma\) starts out consisting of relations that always fail.
 Then, the fixpointing process can be thought of as iteratively deriving new information about \(\gamma\).
-These semantics are shown in figure \ref{fig:relation-semantics}
+These semantics are shown in figure \ref{fig:relation-semantics}.
 
 \chapter{Polymorphic semiringKanren}
 

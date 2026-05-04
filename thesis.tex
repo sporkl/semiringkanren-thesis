@@ -641,6 +641,8 @@ However, consider calling \(\texttt{two-valued}\) with \(\alpha\) mapped to \(\t
 This call fails, because the only value of type \(\texttt{Unit}\) is \(\texttt{sole}\), and \(\texttt{(=/= sole sole)}\) fails.
 Success/failure depends on the type of the argument of \(\texttt{two-value}\) rather than the value.
 
+\section{Roadmap}
+
 The obvious way to implement polymorphism is to generate multiple instances of each relation for each type variable mapping that gets used.
 This is known as \emph{monomorphization}, and is historically the only way polymorphism has been implemented for bottom-up relational languages.
 With semiringKanren, we present a new method of implementing polymorphism based on \emph{large-enough instances} of polymorphic relations,

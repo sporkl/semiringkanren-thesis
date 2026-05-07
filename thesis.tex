@@ -796,9 +796,9 @@ We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}
 	}
 	\and
 	\infer{
-		\Delta \vdash \vec v : \vec \tau
+		\Delta \vdash \vec v : \sigma(\vec\tau)
 	}{
-		\Gamma, (R : \vec\tau \rightarrow); \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt
+		\Gamma, (R : \forall \vec\alpha . \vec\tau \rightarrow); \Delta \vdash \texttt{(\(R\) \(\vec v\))} \wt
 	}
 	\and
 	\infer{ }{
@@ -834,28 +834,34 @@ We give the syntax of polymorphic semiringKanren in figure \ref{fig:poly-syntax}
 	\label{fig:poly-relation-types}
 \end{figure}
 
-Here, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
-As before, we use \(\Delta \vdash v:\tau\) to denote the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
-The value typing judgement is shown in figure \ref{fig:poly-value-types}.
-The \(\Gamma;\Delta \vdash g \wt\) judgement denotes that the goal \(g\) is well-typed under the \(\Gamma\) and \(\Delta\) contexts, as shown in figure \ref{fig:poly-goal-types}.
-The \(\Gamma \vdash Rel \wt\) judgement denotes that the relation \(Rel\) is well-typed under the \(\Gamma\) context, and the \(P \wt\) judgement denotes that the entire program is well-typed.
-The relation and program typing judgements are shown in figure \ref{fig:poly-relation-types}.
+As before, the \(\Gamma\) context holds relation types, and the \(\Delta\) context holds variable types.
 We introduce a new \(\Delta \vdash \tau \vt\) judgement (defined in figure \ref{fig:poly-types-valid}), which asserts that the type \(\tau\) is valid under the \(\Delta\) context.
 The judgements within the \(\Gamma\) context are extended to support type variables: \((R : \forall \alpha_1, \dots, \alpha_m . \tau_1,\dots,\tau_n \rightarrow)\).
 As before, \(\Delta\) holds value typing judgements (of the form \(x:\tau\)). 
 \(\Delta\) is also extended to hold judgements of the form \(\alpha : *\), indicating that the type variable \(\alpha\) can be treated as a valid type in the current context.
 In both cases, type variables may now appear in \(\tau\).
 
+We use \(\Delta \vdash v:\tau\) to denote the value (and therefore variable) typing judgement asserting that value \(v\) has type \(\tau\).
+The value typing judgement is shown in figure \ref{fig:poly-value-types}.
+The \(\Gamma;\Delta \vdash g \wt\) judgement denotes that the goal \(g\) is well-typed under the \(\Gamma\) and \(\Delta\) contexts, as shown in figure \ref{fig:poly-goal-types}.
+When typechecking polymorphic relation calls, we need to verify that each callee type variable is consistently used at the same type by the caller.
+For example, for a relation of type \((R:\forall \alpha . \alpha, \alpha \to)\), we should not be able to call it as \(\texttt{(\(R\) sole (left sole))}\),
+where \(\alpha\) gets mapped to both \(\texttt{Unit}\) and \(\texttt{(Sum Unit Unit)}\) within a single call.
+To accomplish this, we use a \emph{type variable substitution}, notated \(\sigma\), which consistently replaces type variables in the callee's type with types that are valid under the caller's context.
+As long as some such \(\sigma\) exists for which the arguments typecheck correctly, the relation call itself typechecks.
+The \(\Gamma \vdash Rel \wt\) judgement denotes that the relation \(Rel\) is well-typed under the \(\Gamma\) context, and the \(P \wt\) judgement denotes that the entire program is well-typed.
+The relation and program typing judgements are shown in figure \ref{fig:poly-relation-types}.
+
 In the formal semantics type variables are explicitly specified, but in practice they can be automatically extracted by looking at the argument types.
-Also note the use of a type variable substitution, \(\sigma\), when checking the validity of types that may contain not-yet-valid type variables (such as within polymorphic relation calls).
+Also note that in polymorphic relation calls, type variable substitutions may replace callee type variables with caller type variables.
+This is expected, as the caller itself may be a polymorphic relation, and have type variables which are valid types under \(\Delta\).
 Finally, note we use the shorthand \(\alpha \in \tau\) to say ``the type variable \(\alpha\) occurs somewhere within type \(\tau\).''
 
 \section{Monomorphizing Semantics}
 
 Here we update the denotational semantics to handle type variables.
 We use the term ``concrete types'' for types that do not contain type variables.
-We introduce \emph{type variable substitutions}, which we apply to a types potentially containing type variables, to turn them into a concrete types.
-Type variable substitutions walk the tree structure of the type, and replace type variables with specific concrete types.
+Here, we specifically use type variable substitutions to turn arbitrary types (which can contain type variables) into concrete types.
 
 Temporarily ignoring substitutions, imagine we wish to operate on values of an unknown type.
 To represent such a value with the array-based semantics, we need to know the size of the type so we can give it a large-enough array dimension.
@@ -885,7 +891,7 @@ Note that we can easily generate types of size \(n\) as a sum type of \(n\) \(\t
 	\den{\texttt{(pair \(v_1\) \(v_2\))}} (\delta) &= \texttt{(pair \(\den{v_1} (\delta) \) \(\den{v_2} (\delta)\))} \\
 	\den{x} (\delta) &= \delta(x)
 \end{align*}
-\caption{Denotational semantics for polymorphic values.}
+\caption{Denotational semantics for values, again.}
 	\label{fig:poly-values-semantics}
 \end{figure}
 
@@ -933,7 +939,8 @@ We handle type variables by applying \(\sigma\) before taking the denotation of 
 The denotation for values (figure \ref{fig:poly-values-semantics}) under a variable context is a specific concrete value.
 The denotation for goals (figure \ref{fig:poly-goals-semantics}) is expressed as a weight for each assignment of values to variables,
 but should be considered as a multidimensional array across all possible assignments.
-We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing.
+We assume that all needed monomorphic instances of each relation are included in the full program before fixpointing,
+and handle polymorphic relation calls by calling the appropriate monomorphized instance.
 The semantics for relations and programs are given in figure \ref{fig:poly-relations-semantics}.
 
 We refer to polymorphism based on type variables as \emph{parametric polymorphism}.
@@ -1420,7 +1427,7 @@ This makes it easy to count type variable occurrences for relations:
 	We define the \emph{(maximum) number of occurrences of type variable \(\alpha\) in relation \(R\)}, denoted \(\#_\alpha R\),
 	as the (maximum) of occurrences of \(\alpha\) in the top-level goal, with the type environment determined from the arguments.
 	\begin{align*}
-		\#_\alpha \texttt{(defrel (\(R\) \(\forall \alpha \dots\) (\(x_1:\tau_1\)) \dots (\(x_n : \tau_1\))) \(g\))} = \#_\alpha g(x_1:\tau_1,\dots,x_n:\tau_n)
+		\#_\alpha \texttt{(defrel (\(R\) \(\forall \alpha \dots\) (\(x_1:\tau_1\)) \(\dots\) (\(x_n : \tau_1\))) \(g\))} = \#_\alpha g(x_1:\tau_1,\dots,x_n:\tau_n)
 	\end{align*}
 \end{definition}
 
